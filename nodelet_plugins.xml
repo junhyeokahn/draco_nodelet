@@ -1,0 +1,7 @@
+<library path="lib/libdraco_nodelet">
+  <class name="draco_nodelet/DracoNodelet" type="draco_nodelet::DracoNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+    draco nodelet
+  </description>
+  </class>
+</library>
