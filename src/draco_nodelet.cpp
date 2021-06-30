@@ -3,6 +3,7 @@
 #include <draco_nodelet/draco_nodelet.hpp>
 
 using namespace aptk::comm;
+using namespace aptk::ctrl;
 namespace draco_nodelet {
 DracoNodelet::DracoNodelet() {
   axons_ = {"Neck_Pitch",    "R_Hip_IE",      "R_Hip_AA",      "R_Hip_FE",
@@ -28,7 +29,6 @@ DracoNodelet::DracoNodelet() {
   ph_joint_efforts_cmd_.resize(n_actuator_);
 
   b_pnc_alive_ = false;
-  b_online_plot_ = true;
 }
 
 DracoNodelet::~DracoNodelet() {
@@ -52,6 +52,8 @@ DracoNodelet::~DracoNodelet() {
   delete ph_imu_ang_vel_z_;
   delete ph_rfoot_sg_;
   delete ph_lfoot_sg_;
+
+  delete vn_imu_;
 }
 
 void DracoNodelet::onInit() {
@@ -70,8 +72,7 @@ void DracoNodelet::spinThread() {
   sync_.reset(new aptk::comm::Synchronizer(true, "draco_nodelet"));
   sync_->connect();
 
-  interfacer_.reset(new aptk::util::DebugInterfacer(
-      "draco", sync_->getNodeHandle(), sync_->getLogger()));
+  vn_imu_ = new VN100Sensor("vn_100_sensor", dt_);
 
   aptk::comm::enableRT(5, 2);
 
@@ -95,9 +96,9 @@ void DracoNodelet::spinThread() {
 
     CopyData();
     if (sync_->printIndicatedFaults()) {
-      // Faulted
+      // faulted
     } else {
-      // Compute Commands
+      // compute commands
       CopyCommand();
     }
 
@@ -107,13 +108,6 @@ void DracoNodelet::spinThread() {
     sync_->finishControl();
 
     ++count_;
-
-    // for plot
-    // TODO add boolean, because we don't want to do this at every control loop
-    // stop this after initiate exp
-    if (b_online_plot_) {
-      interfacer_->updateDebug();
-    }
   }
 
   sync_->awaitShutdownComplete();
@@ -175,16 +169,13 @@ void DracoNodelet::RegisterData() {
   sync_->registerMISOPtr(ph_rfoot_sg_, "foot__sg__x", "R_Ankle_IE", false);
   ph_lfoot_sg_ = new float(0.);
   sync_->registerMISOPtr(ph_lfoot_sg_, "foot__sg__x", "L_Ankle_IE", false);
-
-  // TODO : add correct name and topic
-  // interfacer_->addEigen(&data_eigen_vector_, "/eigen_vector", {"pos",
-  // "vel"}); interfacer_->addPrimitive(&data_double_, "double");
 }
 
 void DracoNodelet::CopyData() {
   // TODO (JH) : When I have SensorData
   // copy data from placeholder to sensor data
   // figure out contact boolean as well
+  // figure out quaternion
   // check if data is all safe before sending it
 }
 

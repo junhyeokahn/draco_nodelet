@@ -1,6 +1,7 @@
 #pragma once
 
 #include <apptronik_srvs/Float32.h>
+#include <cortex_framework/odometry_sensors/vn100_sensor.hpp>
 #include <cortex_utils/debug_interfacer.hpp>
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
@@ -23,14 +24,17 @@ private:
   ros::NodeHandle nh_;
   boost::shared_ptr<aptk::comm::Synchronizer> sync_;
   boost::shared_ptr<boost::thread> spin_thread_;
-  boost::shared_ptr<aptk::util::DebugInterfacer> interfacer_; // for plot
+  aptk::ctrl::VN100Sensor *vn_imu_;
 
   // service calls
   ros::ServiceServer mode_handler_;
   ros::ServiceServer pnc_handler_;
 
-  // counting
+  // timing
+  double dt_ = 0.001; // TODO Read this from launch file
   int count_;
+
+  // counting
   int n_joint_;
   int n_actuator_;
   int n_medulla_;
@@ -56,7 +60,6 @@ private:
 
   // flags
   bool b_pnc_alive_;
-  bool b_online_plot_;
 
   // register miso and mosi topics to the placeholders
   void RegisterData();
