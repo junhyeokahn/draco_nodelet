@@ -72,7 +72,7 @@ void DracoNodelet::spinThread() {
   sync_.reset(new aptk::comm::Synchronizer(true, "draco_nodelet"));
   sync_->connect();
 
-  vn_imu_ = new VN100Sensor("vn_100_sensor", dt_);
+  vn_imu_ = new VN100Sensor("imu", dt_);
 
   aptk::comm::enableRT(5, 2);
 
@@ -223,6 +223,7 @@ void DracoNodelet::DestructPnC() {
 
 bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
                                apptronik_srvs::Float32::Response &res) {
+  this->ClearFaults();
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "Change to Off Mode" << std::endl;
