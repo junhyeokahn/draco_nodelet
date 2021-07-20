@@ -11,6 +11,10 @@
 
 #include <Eigen/Dense>
 
+#include <configuration.hpp>
+#include <pnc/draco_pnc/draco_interface.hpp>
+#include <utils/util.hpp>
+
 namespace draco_nodelet {
 class DracoNodelet : public nodelet::Nodelet {
 public:
@@ -29,6 +33,7 @@ private:
   // service calls
   ros::ServiceServer mode_handler_;
   ros::ServiceServer pnc_handler_;
+  ros::ServiceServer service_call_handler_;
 
   // timing
   double dt_ = 0.001; // TODO Read this from launch file
@@ -36,7 +41,6 @@ private:
 
   // counting
   int n_joint_;
-  int n_actuator_;
   int n_medulla_;
   int n_sensillum_;
 
@@ -44,6 +48,9 @@ private:
   std::vector<std::string> axons_;
   std::vector<std::string> medullas_;
   std::vector<std::string> sensillums_;
+
+  // actuating joint name corresponding to the axons
+  std::vector<std::string> joint_names_;
 
   // placeholders for data coming through ecat communication
   // this placeholders shares the same order with axons_
@@ -58,29 +65,52 @@ private:
   float *ph_imu_ang_vel_x_, *ph_imu_ang_vel_y_, *ph_imu_ang_vel_z_;
   float *ph_rfoot_sg_, *ph_lfoot_sg_;
 
+  // PnC objects
+  DracoInterface *pnc_interface_;
+  DracoSensorData *pnc_sensor_data_;
+  DracoCommand *pnc_command_;
+
+  double contact_threshold_;
+
+  YAML::Node cfg_;
+
   // flags
   bool b_pnc_alive_;
 
   // register miso and mosi topics to the placeholders
   void RegisterData();
+
   // copy placeholder data to sensor_data
   void CopyData();
+
   // copy command to placeholder
   void CopyCommand();
-  // read yaml, and set gains
-  void SetImpedanceGains();
-  // read yaml, and set current limits
-  void SetCurrentLimits();
+
+  // read yaml, and set gains and current limits
+  void SetServiceCalls();
+
   // construct pnc
   void ConstructPnC();
+
   // destruct pnc
   void DestructPnC();
+
   // change mode
+  // 0: Off
+  // 1: JOINT_IMPEDANCE
   bool ModeHandler(apptronik_srvs::Float32::Request &req,
                    apptronik_srvs::Float32::Response &res);
+
   // enable or disable PnC
+  // 0 : Destruct
+  // 1 : Construct
   bool PnCHandler(apptronik_srvs::Float32::Request &req,
                   apptronik_srvs::Float32::Response &res);
+
+  // set service call
+  // 0 or 1 : Set service call with current yaml file
+  bool ServiceCallHandler(apptronik_srvs::Float32::Request &req,
+                          apptronik_srvs::Float32::Response &res);
 
   // turn off the motors
   void TurnOffMotors();

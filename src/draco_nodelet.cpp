@@ -6,6 +6,9 @@ using namespace aptk::comm;
 using namespace aptk::ctrl;
 namespace draco_nodelet {
 DracoNodelet::DracoNodelet() {
+
+  cfg_ = YAML::LoadFile(THIS_COM "config/draco/nodelet.yaml");
+
   axons_ = {"Neck_Pitch",    "R_Hip_IE",      "R_Hip_AA",      "R_Hip_FE",
             "R_Knee_FE",     "R_Ankle_FE",    "R_Ankle_IE",    "L_Hip_IE",
             "L_Hip_AA",      "L_Hip_FE",      "L_Knee_FE",     "L_Ankle_FE",
@@ -16,24 +19,34 @@ DracoNodelet::DracoNodelet() {
   medullas_ = {"Medulla", "Medulla_V4"};
   sensillums_ = {"Sensillum_v2"};
 
+  joint_names_ = {
+      "neck_pitch",    "r_hip_ie",      "r_hip_aa",      "r_hip_fe",
+      "r_knee_fe",     "r_ankle_fe",    "r_ankle_ie",    "l_hip_ie",
+      "l_hip_aa",      "l_hip_fe",      "l_knee_fe",     "l_ankle_fe",
+      "l_ankle_ie",    "l_shoulder_fe", "l_shoulder_aa", "l_shoulder_ie",
+      "l_elbow",       "l_wrist_roll",  "l_wrist_pitch", "r_shoulder_fe",
+      "r_shoulder_aa", "r_shoulder_ie", "r_elbow",       "r_wrist_roll",
+      "r_wrist_pitch"};
+
   count_ = 0;
-  n_actuator_ = axons_.size();
-  n_joint_ = n_actuator_ + 2; // include two knee proximal joint
+  n_joint_ = axons_.size();
   n_medulla_ = medullas_.size();
   n_sensillum_ = sensillums_.size();
 
-  ph_joint_positions_data_.resize(n_actuator_);
-  ph_joint_velocities_data_.resize(n_actuator_);
-  ph_joint_positions_cmd_.resize(n_actuator_);
-  ph_joint_velocities_cmd_.resize(n_actuator_);
-  ph_joint_efforts_cmd_.resize(n_actuator_);
+  ph_joint_positions_data_.resize(n_joint_);
+  ph_joint_velocities_data_.resize(n_joint_);
+  ph_joint_positions_cmd_.resize(n_joint_);
+  ph_joint_velocities_cmd_.resize(n_joint_);
+  ph_joint_efforts_cmd_.resize(n_joint_);
 
   b_pnc_alive_ = false;
+
+  contact_threshold_ = util::ReadParameter<double>(cfg_, "contact_threshold");
 }
 
 DracoNodelet::~DracoNodelet() {
   spin_thread_->join();
-  for (int i = 0; i < n_actuator_; ++i) {
+  for (int i = 0; i < n_joint_; ++i) {
     delete ph_joint_positions_data_[i];
     delete ph_joint_velocities_data_[i];
     delete ph_joint_positions_cmd_[i];
@@ -65,6 +78,8 @@ void DracoNodelet::onInit() {
       nh_.advertiseService("/mode_handler", &DracoNodelet::ModeHandler, this);
   pnc_handler_ =
       nh_.advertiseService("/pnc_handler", &DracoNodelet::PnCHandler, this);
+  service_call_handler_ = nh_.advertiseService(
+      "/service_call_handler", &DracoNodelet::ServiceCallHandler, this);
 }
 
 void DracoNodelet::spinThread() {
@@ -78,9 +93,7 @@ void DracoNodelet::spinThread() {
 
   RegisterData();
 
-  SetImpedanceGains();
-
-  SetCurrentLimits();
+  SetServiceCalls();
 
   ConstructPnC();
 
@@ -114,7 +127,7 @@ void DracoNodelet::spinThread() {
 }
 
 void DracoNodelet::RegisterData() {
-  for (int i = 0; i < n_actuator_; ++i) {
+  for (int i = 0; i < n_joint_; ++i) {
     // register encoder data
     ph_joint_positions_data_[i] = new float(0.);
     sync_->registerMISOPtr(ph_joint_positions_data_[i],
@@ -172,52 +185,121 @@ void DracoNodelet::RegisterData() {
 }
 
 void DracoNodelet::CopyData() {
-  // TODO (JH) : When I have SensorData
-  // copy data from placeholder to sensor data
-  // figure out contact boolean as well
-  // figure out quaternion
-  // check if data is all safe before sending it
+  // Set encoder data
+  for (int i = 0; i < n_joint_; ++i) {
+    if (joint_names_[i] == "r_knee_fe") {
+      // r_knee_fe_jp
+      pnc_sensor_data_->joint_positions["r_knee_fe_jp"] =
+          static_cast<double>(*(ph_joint_positions_data_[i])) / 2.;
+      pnc_sensor_data_->joint_velocities["r_knee_fe_jp"] =
+          static_cast<double>(*(ph_joint_velocities_data_[i])) / 2.;
+      // r_knee_fe_jd
+      pnc_sensor_data_->joint_positions["r_knee_fe_jd"] =
+          static_cast<double>(*(ph_joint_positions_data_[i])) / 2.;
+      pnc_sensor_data_->joint_velocities["r_knee_fe_jd"] =
+          static_cast<double>(*(ph_joint_velocities_data_[i])) / 2.;
+    } else if (joint_names_[i] == "l_knee_fe") {
+      // l_knee_fe_jp
+      pnc_sensor_data_->joint_positions["l_knee_fe_jp"] =
+          static_cast<double>(*(ph_joint_positions_data_[i])) / 2.;
+      pnc_sensor_data_->joint_velocities["l_knee_fe_jp"] =
+          static_cast<double>(*(ph_joint_velocities_data_[i])) / 2.;
+      // l_knee_fe_jd
+      pnc_sensor_data_->joint_positions["l_knee_fe_jd"] =
+          static_cast<double>(*(ph_joint_positions_data_[i])) / 2.;
+      pnc_sensor_data_->joint_velocities["l_knee_fe_jd"] =
+          static_cast<double>(*(ph_joint_velocities_data_[i])) / 2.;
+    } else {
+      pnc_sensor_data_->joint_positions[joint_names_[i]] =
+          static_cast<double>(*(ph_joint_positions_data_[i]));
+      pnc_sensor_data_->joint_velocities[joint_names_[i]] =
+          static_cast<double>(*(ph_joint_velocities_data_[i]));
+    }
+  }
+
+  // Set contact bool
+  if (*(ph_rfoot_sg_) > contact_threshold_) {
+    pnc_sensor_data_->b_rf_contact = true;
+  } else {
+    pnc_sensor_data_->b_rf_contact = false;
+  }
+  if (*(ph_lfoot_sg_) > contact_threshold_) {
+    pnc_sensor_data_->b_lf_contact = true;
+  } else {
+    pnc_sensor_data_->b_lf_contact = false;
+  }
+
+  // TODO (JH) : Set imu data
+  // TODO (JH) : Check if data is safe
 }
 
 void DracoNodelet::CopyCommand() {
-  // TODO (JH) : When I have Command
-  // copy data from command to placeholder
-  // check if command is all safe before sending it
+
+  for (int i = 0; i < n_joint_; ++i) {
+    if (joint_names_[i] == "r_knee_fe") {
+      *(ph_joint_positions_cmd_[i]) = static_cast<float>(
+          pnc_command_->joint_positions["r_knee_fe_jd"] * 2.);
+      *(ph_joint_velocities_cmd_[i]) = static_cast<float>(
+          pnc_command_->joint_velocities["r_knee_fe_jd"] * 2.);
+      *(ph_joint_efforts_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_torques["r_knee_fe_jd"] / 2.);
+    } else if (joint_names_[i] == "l_knee_fe") {
+      *(ph_joint_positions_cmd_[i]) = static_cast<float>(
+          pnc_command_->joint_positions["l_knee_fe_jd"] * 2.);
+      *(ph_joint_velocities_cmd_[i]) = static_cast<float>(
+          pnc_command_->joint_velocities["l_knee_fe_jd"] * 2.);
+      *(ph_joint_efforts_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_torques["l_knee_fe_jd"] / 2.);
+    } else {
+      *(ph_joint_positions_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_positions[joint_names_[i]]);
+      *(ph_joint_velocities_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_velocities[joint_names_[i]]);
+      *(ph_joint_efforts_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_torques[joint_names_[i]]);
+    }
+  }
+  // TODO (JH) : Set if commands is safe
 }
 
-void DracoNodelet::SetImpedanceGains() {
-  // TODO (JH) read yaml and set gain
-
-  // Here are some example code for it.
-  // apptronik_srvs::Float32 srv_float;
-  // srv_float.request.set_data = 0.123;
-  // for (int i = 0; i < n_joint_; ++i) {
-  // CallSetService(axons_[i], "Control__Joint__Impedance__KP", srv_float);
-  //}
-}
-
-void DracoNodelet::SetCurrentLimits() {
-  // TODO (JH) read yaml and set current limits
-
-  // Here are some example code for it.
-  // apptronik_srvs::Float32 srv_float;
-  // srv_float.request.set_data = 0.123;
-  // for (int i = 0; i < n_joint_; ++i) {
-  // CallSetService(axons_[i], "Control__Joint__Impedance__KP", srv_float);
-  //}
+void DracoNodelet::SetServiceCalls() {
+  for (int i = 0; i < n_joint_; ++i) {
+    apptronik_srvs::Float32 srv_float_kp;
+    apptronik_srvs::Float32 srv_float_kd;
+    apptronik_srvs::Float32 srv_float_current_limit;
+    srv_float_kp.request.set_data =
+        util::ReadParameter<float>(cfg_["service_call"], "kp");
+    srv_float_kd.request.set_data =
+        util::ReadParameter<float>(cfg_["service_call"], "kd");
+    srv_float_current_limit.request.set_data =
+        util::ReadParameter<float>(cfg_["service_call"], "current_limit");
+    CallSetService(axons_[i], "Control__Joint__Impedance__KP", srv_float_kp);
+    CallSetService(axons_[i], "Control__Joint__Impedance__KD", srv_float_kd);
+    // TODO (JH) : Check if this matches with my expectation
+    CallSetService(axons_[i], "Limits__Motor__Current_Max_A",
+                   srv_float_current_limit);
+  }
 }
 
 void DracoNodelet::ConstructPnC() {
   if (!b_pnc_alive_) {
-    // TODO (JH) : construct pnc
+    pnc_interface_ = new DracoInterface(false);
+    pnc_sensor_data_ = new DracoSensorData();
+    pnc_command_ = new DracoCommand();
     b_pnc_alive_ = true;
+  } else {
+    std::cout << "[[[Warning]]] PnC is already alive" << std::endl;
   }
 }
 
 void DracoNodelet::DestructPnC() {
   if (b_pnc_alive_) {
-    // TODO (JH) : destruct pnc
+    delete pnc_interface_;
+    delete pnc_sensor_data_;
+    delete pnc_command_;
     b_pnc_alive_ = false;
+  } else {
+    std::cout << "[[[Warning]]] PnC is already desturcted" << std::endl;
   }
 }
 
@@ -226,15 +308,16 @@ bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
   this->ClearFaults();
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
-    std::cout << "Change to Off Mode" << std::endl;
+    std::cout << "[[[Change to Off Mode]]]" << std::endl;
     TurnOffMotors();
     return true;
   } else if (data == 1) {
-    std::cout << "Change to Off Mode" << std::endl;
+    std::cout << "[[[Change to JOINT_IMPEDANCE Mode]]]" << std::endl;
     TurnOnMotors();
     return true;
   } else {
-    std::cout << "Wrong Data Received for ModeHandler()" << std::endl;
+    std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
+              << std::endl;
     return false;
   }
 }
@@ -243,33 +326,52 @@ bool DracoNodelet::PnCHandler(apptronik_srvs::Float32::Request &req,
                               apptronik_srvs::Float32::Response &res) {
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
-    std::cout << "Destruct PnC" << std::endl;
+    std::cout << "[[[Destruct PnC]]]" << std::endl;
     DestructPnC();
     return true;
   } else if (data == 1) {
-    std::cout << "Construct PnC" << std::endl;
+    std::cout << "[[[Construct PnC]]]" << std::endl;
     ConstructPnC();
     return true;
   } else {
-    std::cout << "Wrong Data Received for PnCHandler()" << std::endl;
+    std::cout << "[[[Warning]]] Wrong Data Received for PnCHandler()"
+              << std::endl;
+    return false;
+  }
+}
+
+bool DracoNodelet::ServiceCallHandler(apptronik_srvs::Float32::Request &req,
+                                      apptronik_srvs::Float32::Response &res) {
+  double data = static_cast<double>(req.set_data);
+  if (data == 0) {
+    std::cout << "[[[Reset Gains and Current Limits]]]" << std::endl;
+    SetServiceCalls();
+    return true;
+  } else if (data == 1) {
+    std::cout << "[[[Reset Gains and Current Limits]]]" << std::endl;
+    SetServiceCalls();
+    return true;
+  } else {
+    std::cout << "[[[Warning]]] Wrong Data Received for PnCHandler()"
+              << std::endl;
     return false;
   }
 }
 
 void DracoNodelet::TurnOffMotors() {
-  for (int i = 0; i < n_actuator_; ++i) {
+  for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("OFF", axons_[i]);
   }
 }
 
 void DracoNodelet::TurnOnMotors() {
-  for (int i = 0; i < n_actuator_; ++i) {
+  for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
   }
 }
 
 void DracoNodelet::ClearFaults() {
-  for (int i = 0; i < n_actuator_; ++i) {
+  for (int i = 0; i < n_joint_; ++i) {
     sync_->clearFaults(axons_[i]);
   }
 }
