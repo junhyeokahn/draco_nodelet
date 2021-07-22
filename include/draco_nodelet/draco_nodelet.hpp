@@ -34,9 +34,11 @@ private:
   ros::ServiceServer mode_handler_;
   ros::ServiceServer pnc_handler_;
   ros::ServiceServer service_call_handler_;
+  ros::ServiceServer imu_handler_;
 
   // timing
-  double dt_ = 0.001; // TODO Read this from launch file
+  double pnc_dt_;
+  double imu_servo_rate_;
   int count_;
 
   // counting
@@ -72,10 +74,18 @@ private:
 
   double contact_threshold_;
 
-  YAML::Node cfg_;
+  YAML::Node nodelet_cfg_;
+  YAML::Node pnc_cfg_;
+
+  Eigen::Vector3d world_la_offset_;
+  std::vector<Eigen::Vector3d> world_la_offset_list_;
+  int n_data_for_imu_initialize_;
+  double vel_damping_;
+  double damping_threshold_;
 
   // flags
   bool b_pnc_alive_;
+  bool b_initializing_imu_;
 
   // register miso and mosi topics to the placeholders
   void RegisterData();
@@ -107,6 +117,11 @@ private:
   bool PnCHandler(apptronik_srvs::Float32::Request &req,
                   apptronik_srvs::Float32::Response &res);
 
+  // reinitialize imu
+  // 0 or 1 : Initialize
+  bool IMUHandler(apptronik_srvs::Float32::Request &req,
+                  apptronik_srvs::Float32::Response &res);
+
   // set service call
   // 0 or 1 : Set service call with current yaml file
   bool ServiceCallHandler(apptronik_srvs::Float32::Request &req,
@@ -118,6 +133,9 @@ private:
   void TurnOnMotors();
   // clear faults on motors
   void ClearFaults();
+
+  // update world_la_offset_
+  void InitializeIMU();
 
   template <class SrvType>
   void CallGetService(const std::string &slave_name,

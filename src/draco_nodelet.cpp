@@ -7,7 +7,11 @@ using namespace aptk::ctrl;
 namespace draco_nodelet {
 DracoNodelet::DracoNodelet() {
 
-  cfg_ = YAML::LoadFile(THIS_COM "config/draco/nodelet.yaml");
+  nodelet_cfg_ = YAML::LoadFile(THIS_COM "config/draco/nodelet.yaml");
+  imu_servo_rate_ = util::ReadParameter<double>(nodelet_cfg_, "imu_servo_rate");
+
+  pnc_cfg_ = YAML::LoadFile(THIS_COM "config/draco/pnc.yaml");
+  pnc_dt_ = util::ReadParameter<double>(pnc_cfg_, "servo_dt");
 
   axons_ = {"Neck_Pitch",    "R_Hip_IE",      "R_Hip_AA",      "R_Hip_FE",
             "R_Knee_FE",     "R_Ankle_FE",    "R_Ankle_IE",    "L_Hip_IE",
@@ -24,8 +28,8 @@ DracoNodelet::DracoNodelet() {
       "r_knee_fe",     "r_ankle_fe",    "r_ankle_ie",    "l_hip_ie",
       "l_hip_aa",      "l_hip_fe",      "l_knee_fe",     "l_ankle_fe",
       "l_ankle_ie",    "l_shoulder_fe", "l_shoulder_aa", "l_shoulder_ie",
-      "l_elbow",       "l_wrist_roll",  "l_wrist_pitch", "r_shoulder_fe",
-      "r_shoulder_aa", "r_shoulder_ie", "r_elbow",       "r_wrist_roll",
+      "l_elbow_fe",    "l_wrist_ps",    "l_wrist_pitch", "r_shoulder_fe",
+      "r_shoulder_aa", "r_shoulder_ie", "r_elbow_fe",    "r_wrist_ps",
       "r_wrist_pitch"};
 
   count_ = 0;
@@ -40,8 +44,19 @@ DracoNodelet::DracoNodelet() {
   ph_joint_efforts_cmd_.resize(n_joint_);
 
   b_pnc_alive_ = false;
+  b_initializing_imu_ = true;
 
-  contact_threshold_ = util::ReadParameter<double>(cfg_, "contact_threshold");
+  world_la_offset_.setZero();
+  // TODO : tune this parameters
+  vel_damping_ = util::ReadParameter<double>(nodelet_cfg_, "vel_damping");
+  // TODO : tune this parameters
+  damping_threshold_ =
+      util::ReadParameter<double>(nodelet_cfg_, "damping_threshold");
+  n_data_for_imu_initialize_ =
+      util::ReadParameter<int>(nodelet_cfg_, "n_data_for_imu_initialize");
+
+  contact_threshold_ =
+      util::ReadParameter<double>(nodelet_cfg_, "contact_threshold");
 }
 
 DracoNodelet::~DracoNodelet() {
@@ -80,6 +95,8 @@ void DracoNodelet::onInit() {
       nh_.advertiseService("/pnc_handler", &DracoNodelet::PnCHandler, this);
   service_call_handler_ = nh_.advertiseService(
       "/service_call_handler", &DracoNodelet::ServiceCallHandler, this);
+  imu_handler_ =
+      nh_.advertiseService("/imu_handler", &DracoNodelet::IMUHandler, this);
 }
 
 void DracoNodelet::spinThread() {
@@ -87,7 +104,7 @@ void DracoNodelet::spinThread() {
   sync_.reset(new aptk::comm::Synchronizer(true, "draco_nodelet"));
   sync_->connect();
 
-  vn_imu_ = new VN100Sensor("imu", dt_);
+  vn_imu_ = new VN100Sensor("imu", imu_servo_rate_);
 
   aptk::comm::enableRT(5, 2);
 
@@ -100,6 +117,8 @@ void DracoNodelet::spinThread() {
   TurnOffMotors();
 
   ClearFaults();
+
+  InitializeIMU();
 
   // main control loop
   while (sync_->ok()) {
@@ -185,6 +204,51 @@ void DracoNodelet::RegisterData() {
 }
 
 void DracoNodelet::CopyData() {
+  // Process IMU
+  uint16_t timestamp = sync_->getControllerCycleTime();
+  std::cout << "controller cycle time" << std::endl;
+  std::cout << timestamp << std::endl;
+  Eigen::Quaternion<double> local_ned_q_frame(
+      *ph_imu_quaternion_w_ned_, *ph_imu_quaternion_x_ned_,
+      *ph_imu_quaternion_y_ned_, *ph_imu_quaternion_z_ned_);
+  Eigen::Vector3d frameAVframe(*ph_imu_ang_vel_x_, *ph_imu_ang_vel_y_,
+                               *ph_imu_ang_vel_z_);
+  Eigen::Vector3d local_nedLAframe__delta_vel(*ph_imu_dvel_x_, *ph_imu_dvel_y_,
+                                              *ph_imu_dvel_z_);
+  uint16_t status = 0; // not used
+
+  if (b_initializing_imu_) {
+    world_la_offset_list_.push_back(local_nedLAframe__delta_vel /
+                                    imu_servo_rate_);
+    if (world_la_offset_list_.size() == n_data_for_imu_initialize_) {
+      Eigen::Vector3d sum(0., 0., 0.);
+      for (int i = 0; i < n_data_for_imu_initialize_; ++i) {
+        sum += world_la_offset_list_[i];
+      }
+      world_la_offset_ = sum / n_data_for_imu_initialize_;
+      world_la_offset_list_.clear();
+      b_initializing_imu_ = false;
+      std::cout << "[IMU initialized]" << std::endl;
+      std::cout << "world_la_offset_: " << world_la_offset_.transpose()
+                << std::endl;
+    }
+  }
+
+  vn_imu_->processData(timestamp, local_ned_q_frame, frameAVframe,
+                       local_nedLAframe__delta_vel, status, world_la_offset_,
+                       vel_damping_, damping_threshold_);
+  // Set imu data
+  Eigen::Isometry3d worldTframe;
+  Eigen::Vector6d worldSVframe;
+
+  vn_imu_->estimateTwist(worldSVframe);
+  pnc_sensor_data_->imu_frame_vel = worldSVframe;
+
+  vn_imu_->estimateTransform(worldTframe);
+  pnc_sensor_data_->imu_frame_iso.setIdentity();
+  pnc_sensor_data_->imu_frame_iso.block(0, 0, 3, 3) = worldTframe.linear();
+  pnc_sensor_data_->imu_frame_iso.block(0, 3, 3, 1) = worldTframe.translation();
+
   // Set encoder data
   for (int i = 0; i < n_joint_; ++i) {
     if (joint_names_[i] == "r_knee_fe") {
@@ -228,9 +292,6 @@ void DracoNodelet::CopyData() {
   } else {
     pnc_sensor_data_->b_lf_contact = false;
   }
-
-  // TODO (JH) : Set imu data
-  // TODO (JH) : Check if data is safe
 }
 
 void DracoNodelet::CopyCommand() {
@@ -259,7 +320,6 @@ void DracoNodelet::CopyCommand() {
           static_cast<float>(pnc_command_->joint_torques[joint_names_[i]]);
     }
   }
-  // TODO (JH) : Set if commands is safe
 }
 
 void DracoNodelet::SetServiceCalls() {
@@ -268,15 +328,15 @@ void DracoNodelet::SetServiceCalls() {
     apptronik_srvs::Float32 srv_float_kd;
     apptronik_srvs::Float32 srv_float_current_limit;
     srv_float_kp.request.set_data =
-        util::ReadParameter<float>(cfg_["service_call"], "kp");
+        util::ReadParameter<float>(nodelet_cfg_["service_call"], "kp");
     srv_float_kd.request.set_data =
-        util::ReadParameter<float>(cfg_["service_call"], "kd");
-    srv_float_current_limit.request.set_data =
-        util::ReadParameter<float>(cfg_["service_call"], "current_limit");
+        util::ReadParameter<float>(nodelet_cfg_["service_call"], "kd");
+    srv_float_current_limit.request.set_data = util::ReadParameter<float>(
+        nodelet_cfg_["service_call"], "current_limit");
     CallSetService(axons_[i], "Control__Joint__Impedance__KP", srv_float_kp);
     CallSetService(axons_[i], "Control__Joint__Impedance__KD", srv_float_kd);
     // TODO (JH) : Check if this matches with my expectation
-    CallSetService(axons_[i], "Limits__Motor__Current_Max_A",
+    CallSetService(axons_[i], "Limits__Motor__Effort__Saturate__Relative_val",
                    srv_float_current_limit);
   }
 }
@@ -352,7 +412,25 @@ bool DracoNodelet::ServiceCallHandler(apptronik_srvs::Float32::Request &req,
     SetServiceCalls();
     return true;
   } else {
-    std::cout << "[[[Warning]]] Wrong Data Received for PnCHandler()"
+    std::cout << "[[[Warning]]] Wrong Data Received for ServiceCallHandler()"
+              << std::endl;
+    return false;
+  }
+}
+
+bool DracoNodelet::IMUHandler(apptronik_srvs::Float32::Request &req,
+                              apptronik_srvs::Float32::Response &res) {
+  double data = static_cast<double>(req.set_data);
+  if (data == 0) {
+    std::cout << "[[[Reinitialize IMU]]]" << std::endl;
+    InitializeIMU();
+    return true;
+  } else if (data == 1) {
+    std::cout << "[[[Reinitialize IMU]]]" << std::endl;
+    InitializeIMU();
+    return true;
+  } else {
+    std::cout << "[[[Warning]]] Wrong Data Received for IMUHandler()"
               << std::endl;
     return false;
   }
@@ -374,6 +452,11 @@ void DracoNodelet::ClearFaults() {
   for (int i = 0; i < n_joint_; ++i) {
     sync_->clearFaults(axons_[i]);
   }
+}
+
+void DracoNodelet::InitializeIMU() {
+  b_initializing_imu_ = true;
+  world_la_offset_list_.clear();
 }
 
 template <class SrvType>
