@@ -5,6 +5,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 project(draco_nodelet)
 
+set(CMAKE_CXX_STANDARD 17)
 include_directories("/usr/local/include")
 link_directories("/usr/local/lib")
 list(APPEND CMAKE_MODULE_PATH "/home/apptronik/Repository/PnC/cmake")
@@ -34,3 +35,4 @@ INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 add_library(${PROJECT_NAME} src/draco_nodelet.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES}
                                       ${PNC_LIBRARIES})
+

@@ -7,10 +7,9 @@ using namespace aptk::ctrl;
 namespace draco_nodelet {
 DracoNodelet::DracoNodelet() {
 
-  nodelet_cfg_ = YAML::LoadFile(THIS_COM "config/draco/nodelet.yaml");
-  imu_servo_rate_ = util::ReadParameter<double>(nodelet_cfg_, "imu_servo_rate");
+  this->LoadConfigFile();
 
-  pnc_cfg_ = YAML::LoadFile(THIS_COM "config/draco/pnc.yaml");
+  imu_servo_rate_ = util::ReadParameter<double>(nodelet_cfg_, "imu_servo_rate");
   pnc_dt_ = util::ReadParameter<double>(pnc_cfg_, "servo_dt");
 
   axons_ = {"Neck_Pitch",    "R_Hip_IE",      "R_Hip_AA",      "R_Hip_FE",
@@ -42,8 +41,18 @@ DracoNodelet::DracoNodelet() {
   ph_joint_positions_cmd_.resize(n_joint_);
   ph_joint_velocities_cmd_.resize(n_joint_);
   ph_joint_efforts_cmd_.resize(n_joint_);
+  ph_current_cmd_.resize(n_joint_);
 
-  b_pnc_alive_ = false;
+  b_pnc_alive_ = true;
+#if B_FIXED_CONFIGURATION
+  pnc_interface_ = new FixedDracoInterface(false);
+  pnc_sensor_data_ = new FixedDracoSensorData();
+  pnc_command_ = new FixedDracoCommand();
+#else
+  pnc_interface_ = new DracoInterface(false);
+  pnc_sensor_data_ = new DracoSensorData();
+  pnc_command_ = new DracoCommand();
+#endif
   b_initializing_imu_ = true;
 
   world_la_offset_.setZero();
@@ -67,6 +76,7 @@ DracoNodelet::~DracoNodelet() {
     delete ph_joint_positions_cmd_[i];
     delete ph_joint_velocities_cmd_[i];
     delete ph_joint_efforts_cmd_[i];
+    delete ph_current_cmd_[i];
   }
   delete ph_imu_quaternion_w_ned_;
   delete ph_imu_quaternion_x_ned_;
@@ -89,6 +99,8 @@ void DracoNodelet::onInit() {
   spin_thread_.reset(
       new boost::thread(boost::bind(&DracoNodelet::spinThread, this)));
 
+  fault_handler_ =
+      nh_.advertiseService("/fault_handler", &DracoNodelet::FaultHandler, this);
   mode_handler_ =
       nh_.advertiseService("/mode_handler", &DracoNodelet::ModeHandler, this);
   pnc_handler_ =
@@ -100,19 +112,28 @@ void DracoNodelet::onInit() {
 }
 
 void DracoNodelet::spinThread() {
-  // set up controller
   sync_.reset(new aptk::comm::Synchronizer(true, "draco_nodelet"));
   sync_->connect();
+  debug_interface_.reset(new aptk::util::DebugInterfacer(
+      "draco", sync_->getNodeHandle(), sync_->getLogger()));
+
+  // TEST
+  std::cout << "================" << std::endl;
+  std::vector<std::string> tmp = sync_->getSlaveList();
+  for (int i = 0; i < tmp.size(); ++i) {
+    std::cout << tmp[i] << std::endl;
+  }
+  std::cout << "================" << std::endl;
+  // TEST
 
   vn_imu_ = new VN100Sensor("imu", imu_servo_rate_);
+  vn_imu_->addDebugInterfaces(debug_interface_);
 
   aptk::comm::enableRT(5, 2);
 
   RegisterData();
 
   SetServiceCalls();
-
-  ConstructPnC();
 
   TurnOffMotors();
 
@@ -131,7 +152,8 @@ void DracoNodelet::spinThread() {
       // faulted
     } else {
       // compute commands
-      CopyCommand();
+      // pnc_interface_->getCommand(pnc_sensor_data_, pnc_command_);
+      // CopyCommand();
     }
 
     sync_->getLogger()->captureLine();
@@ -140,12 +162,14 @@ void DracoNodelet::spinThread() {
     sync_->finishControl();
 
     ++count_;
+    debug_interface_->updateDebug();
   }
 
   sync_->awaitShutdownComplete();
 }
 
 void DracoNodelet::RegisterData() {
+  std::cout << "DracoNodelet::RegisterData()" << std::endl;
   for (int i = 0; i < n_joint_; ++i) {
     // register encoder data
     ph_joint_positions_data_[i] = new float(0.);
@@ -164,6 +188,9 @@ void DracoNodelet::RegisterData() {
                            "cmd__joint__velocity__radps", axons_[i], false);
     ph_joint_efforts_cmd_[i] = new float(0.);
     sync_->registerMOSIPtr(ph_joint_efforts_cmd_[i], "cmd__joint__effort__nm",
+                           axons_[i], false);
+    ph_current_cmd_[i] = new float(0.);
+    sync_->registerMOSIPtr(ph_current_cmd_[i], "cmd__motor__effort__a",
                            axons_[i], false);
   }
 
@@ -204,10 +231,11 @@ void DracoNodelet::RegisterData() {
 }
 
 void DracoNodelet::CopyData() {
+#if B_FIXED_CONFIGURATION
+  // skip updating imu processing and contact sensor processing
+#else
   // Process IMU
-  uint16_t timestamp = sync_->getControllerCycleTime();
-  std::cout << "controller cycle time" << std::endl;
-  std::cout << timestamp << std::endl;
+  uint16_t timestamp = sync_->getBusTimeNS();
   Eigen::Quaternion<double> local_ned_q_frame(
       *ph_imu_quaternion_w_ned_, *ph_imu_quaternion_x_ned_,
       *ph_imu_quaternion_y_ned_, *ph_imu_quaternion_z_ned_);
@@ -249,6 +277,19 @@ void DracoNodelet::CopyData() {
   pnc_sensor_data_->imu_frame_iso.block(0, 0, 3, 3) = worldTframe.linear();
   pnc_sensor_data_->imu_frame_iso.block(0, 3, 3, 1) = worldTframe.translation();
 
+  // Set contact bool
+  if (*(ph_rfoot_sg_) > contact_threshold_) {
+    pnc_sensor_data_->b_rf_contact = true;
+  } else {
+    pnc_sensor_data_->b_rf_contact = false;
+  }
+  if (*(ph_lfoot_sg_) > contact_threshold_) {
+    pnc_sensor_data_->b_lf_contact = true;
+  } else {
+    pnc_sensor_data_->b_lf_contact = false;
+  }
+#endif
+
   // Set encoder data
   for (int i = 0; i < n_joint_; ++i) {
     if (joint_names_[i] == "r_knee_fe") {
@@ -280,22 +321,9 @@ void DracoNodelet::CopyData() {
           static_cast<double>(*(ph_joint_velocities_data_[i]));
     }
   }
-
-  // Set contact bool
-  if (*(ph_rfoot_sg_) > contact_threshold_) {
-    pnc_sensor_data_->b_rf_contact = true;
-  } else {
-    pnc_sensor_data_->b_rf_contact = false;
-  }
-  if (*(ph_lfoot_sg_) > contact_threshold_) {
-    pnc_sensor_data_->b_lf_contact = true;
-  } else {
-    pnc_sensor_data_->b_lf_contact = false;
-  }
 }
 
 void DracoNodelet::CopyCommand() {
-
   for (int i = 0; i < n_joint_; ++i) {
     if (joint_names_[i] == "r_knee_fe") {
       *(ph_joint_positions_cmd_[i]) = static_cast<float>(
@@ -323,19 +351,30 @@ void DracoNodelet::CopyCommand() {
 }
 
 void DracoNodelet::SetServiceCalls() {
+  bool b_conservative =
+      util::ReadParameter<bool>(nodelet_cfg_["service_call"], "conservative");
+  apptronik_srvs::Float32 srv_float_kp;
+  apptronik_srvs::Float32 srv_float_kd;
+  apptronik_srvs::Float32 srv_float_current_limit;
+
   for (int i = 0; i < n_joint_; ++i) {
-    apptronik_srvs::Float32 srv_float_kp;
-    apptronik_srvs::Float32 srv_float_kd;
-    apptronik_srvs::Float32 srv_float_current_limit;
-    srv_float_kp.request.set_data =
-        util::ReadParameter<float>(nodelet_cfg_["service_call"], "kp");
-    srv_float_kd.request.set_data =
-        util::ReadParameter<float>(nodelet_cfg_["service_call"], "kd");
-    srv_float_current_limit.request.set_data = util::ReadParameter<float>(
-        nodelet_cfg_["service_call"], "current_limit");
+    if (b_conservative) {
+      srv_float_kp.request.set_data = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "weak_kp");
+      srv_float_kd.request.set_data = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "weak_kd");
+      srv_float_current_limit.request.set_data = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "weak_current_limit");
+    } else {
+      srv_float_kp.request.set_data = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "kp");
+      srv_float_kd.request.set_data = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "kd");
+      srv_float_current_limit.request.set_data = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "current_limit");
+    }
     CallSetService(axons_[i], "Control__Joint__Impedance__KP", srv_float_kp);
     CallSetService(axons_[i], "Control__Joint__Impedance__KD", srv_float_kd);
-    // TODO (JH) : Check if this matches with my expectation
     CallSetService(axons_[i], "Limits__Motor__Effort__Saturate__Relative_val",
                    srv_float_current_limit);
   }
@@ -343,9 +382,11 @@ void DracoNodelet::SetServiceCalls() {
 
 void DracoNodelet::ConstructPnC() {
   if (!b_pnc_alive_) {
+#if B_FIXED_CONFIGURATION
+    pnc_interface_ = new FixedDracoInterface(false);
+#else
     pnc_interface_ = new DracoInterface(false);
-    pnc_sensor_data_ = new DracoSensorData();
-    pnc_command_ = new DracoCommand();
+#endif
     b_pnc_alive_ = true;
   } else {
     std::cout << "[[[Warning]]] PnC is already alive" << std::endl;
@@ -355,25 +396,42 @@ void DracoNodelet::ConstructPnC() {
 void DracoNodelet::DestructPnC() {
   if (b_pnc_alive_) {
     delete pnc_interface_;
-    delete pnc_sensor_data_;
-    delete pnc_command_;
     b_pnc_alive_ = false;
   } else {
     std::cout << "[[[Warning]]] PnC is already desturcted" << std::endl;
   }
 }
 
+bool DracoNodelet::FaultHandler(apptronik_srvs::Float32::Request &req,
+                                apptronik_srvs::Float32::Response &res) {
+  double data = static_cast<double>(req.set_data);
+  if (data == 0) {
+    std::cout << "[[[Clear the faults]]]" << std::endl;
+    ClearFaults();
+    return true;
+  } else if (data == 1) {
+    std::cout << "[[[Clear the faults]]]" << std::endl;
+    ClearFaults();
+  } else {
+    std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
+              << std::endl;
+    return false;
+  }
+}
+
 bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
                                apptronik_srvs::Float32::Response &res) {
-  this->ClearFaults();
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Change to Off Mode]]]" << std::endl;
     TurnOffMotors();
     return true;
   } else if (data == 1) {
+    std::cout << "[[[Change to MOTOR_CURRENT Mode]]]" << std::endl;
+    TurnOnMotorCurrent();
+  } else if (data == 2) {
     std::cout << "[[[Change to JOINT_IMPEDANCE Mode]]]" << std::endl;
-    TurnOnMotors();
+    TurnOnJointImpedance();
     return true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
@@ -388,9 +446,11 @@ bool DracoNodelet::PnCHandler(apptronik_srvs::Float32::Request &req,
   if (data == 0) {
     std::cout << "[[[Destruct PnC]]]" << std::endl;
     DestructPnC();
+    std::cout << "PnC is destructed" << std::endl;
     return true;
   } else if (data == 1) {
     std::cout << "[[[Construct PnC]]]" << std::endl;
+    std::cout << "PnC is constructed" << std::endl;
     ConstructPnC();
     return true;
   } else {
@@ -402,6 +462,7 @@ bool DracoNodelet::PnCHandler(apptronik_srvs::Float32::Request &req,
 
 bool DracoNodelet::ServiceCallHandler(apptronik_srvs::Float32::Request &req,
                                       apptronik_srvs::Float32::Response &res) {
+  this->LoadConfigFile();
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Reset Gains and Current Limits]]]" << std::endl;
@@ -438,13 +499,29 @@ bool DracoNodelet::IMUHandler(apptronik_srvs::Float32::Request &req,
 
 void DracoNodelet::TurnOffMotors() {
   for (int i = 0; i < n_joint_; ++i) {
+    std::cout << "i : " << i << std::endl;
+    std::cout << "name : " << axons_[i] << std::endl;
     sync_->changeMode("OFF", axons_[i]);
   }
 }
 
-void DracoNodelet::TurnOnMotors() {
+void DracoNodelet::TurnOnJointImpedance() {
+  // sync_->changeMode("JOINT_IMPEDANCE", "Neck_Pitch");
+  // std::cout << "0" << std::endl;
+  // sync_->changeMode("JOINT_IMPEDANCE", "R_Hip_IE");
+  // std::cout << "1" << std::endl;
+  // sync_->changeMode("JOINT_IMPEDANCE", "R_Hip_AA");
+  // std::cout << "2" << std::endl;
+  // sync_->changeMode("JOINT_IMPEDANCE", "R_Hip_FE");
+  // std::cout << "3" << std::endl;
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
+  }
+}
+
+void DracoNodelet::TurnOnMotorCurrent() {
+  for (int i = 0; i < n_joint_; ++i) {
+    sync_->changeMode("MOTOR_CURRENT", axons_[i]);
   }
 }
 
@@ -457,6 +534,16 @@ void DracoNodelet::ClearFaults() {
 void DracoNodelet::InitializeIMU() {
   b_initializing_imu_ = true;
   world_la_offset_list_.clear();
+}
+
+void DracoNodelet::LoadConfigFile() {
+#if B_FIXED_CONFIGURATION
+  nodelet_cfg_ = YAML::LoadFile(THIS_COM "config/fixed_draco/nodelet.yaml");
+  pnc_cfg_ = YAML::LoadFile(THIS_COM "config/fixed_draco/pnc.yaml");
+#else
+  nodelet_cfg_ = YAML::LoadFile(THIS_COM "config/draco/nodelet.yaml");
+  pnc_cfg_ = YAML::LoadFile(THIS_COM "config/draco/pnc.yaml");
+#endif
 }
 
 template <class SrvType>
