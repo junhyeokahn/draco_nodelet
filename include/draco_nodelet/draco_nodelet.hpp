@@ -1,17 +1,17 @@
 #pragma once
 
-#define B_FIXED_CONFIGURATION true
+#include <Eigen/Dense>
+#include <cassert>
+
+#include <nodelet/nodelet.h>
+#include <ros/ros.h>
 
 #include <apptronik_srvs/Float32.h>
 #include <cortex_framework/odometry_sensors/vn100_sensor.hpp>
 #include <cortex_utils/debug_interfacer.hpp>
-#include <nodelet/nodelet.h>
-#include <ros/ros.h>
 #include <rt_utils/synchronizer.hpp>
 
-#include <cassert>
-
-#include <Eigen/Dense>
+#include <draco_nodelet/nodelet_configuration.hpp>
 
 #include <configuration.hpp>
 #if B_FIXED_CONFIGURATION
@@ -22,6 +22,13 @@
 #include <utils/util.hpp>
 
 namespace draco_nodelet {
+
+namespace control_mode {
+constexpr int kOff = 0;
+constexpr int kMotorCurrent = 1;
+constexpr int kJointImpedance = 2;
+} // namespace control_mode
+
 class DracoNodelet : public nodelet::Nodelet {
 public:
   void spinThread();
@@ -30,6 +37,8 @@ public:
   ~DracoNodelet();
 
 private:
+  int control_mode_;
+
   // RT kernel
   ros::NodeHandle nh_;
   boost::shared_ptr<aptk::comm::Synchronizer> sync_;
@@ -43,6 +52,7 @@ private:
   ros::ServiceServer gain_limit_handler_;
   ros::ServiceServer imu_handler_;
   ros::ServiceServer fault_handler_;
+  ros::ServiceServer fake_estop_handler_;
 
   // timing
   double pnc_dt_;
@@ -70,6 +80,8 @@ private:
   std::vector<float *> ph_joint_velocities_cmd_;
   std::vector<float *> ph_joint_efforts_cmd_;
   std::vector<float *> ph_current_cmd_;
+  std::vector<float *> ph_kp_;
+  std::vector<float *> ph_kd_;
   float *ph_imu_quaternion_w_ned_, *ph_imu_quaternion_x_ned_,
       *ph_imu_quaternion_y_ned_, *ph_imu_quaternion_z_ned_;
   float *ph_imu_dvel_x_, *ph_imu_dvel_y_, *ph_imu_dvel_z_;
@@ -108,6 +120,7 @@ private:
   bool b_destruct_pnc_;
   bool b_construct_pnc_;
   bool b_gains_limits_;
+  bool b_fake_estop_released_;
 
   // register miso and mosi topics to the placeholders
   void RegisterData();
@@ -161,6 +174,11 @@ private:
   bool GainsAndLimitsHandler(apptronik_srvs::Float32::Request &req,
                              apptronik_srvs::Float32::Response &res);
 
+  // set gains and limits
+  // 0 or 1 : Fake estop release
+  bool FakeEstopHandler(apptronik_srvs::Float32::Request &req,
+                        apptronik_srvs::Float32::Response &res);
+
   // turn off the motors
   void TurnOffMotors();
   // turn on the motors to joint impedance mode
@@ -169,6 +187,8 @@ private:
   void TurnOnMotorCurrent();
   // clear faults on motors
   void ClearFaults();
+  // set safe commands
+  void SetSafeCommand();
 
   template <class SrvType>
   void CallGetService(const std::string &slave_name,

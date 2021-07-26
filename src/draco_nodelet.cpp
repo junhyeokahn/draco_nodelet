@@ -31,12 +31,16 @@ DracoNodelet::DracoNodelet() {
       "r_shoulder_aa", "r_shoulder_ie", "r_elbow_fe",    "r_wrist_ps",
       "r_wrist_pitch"};
 
+  control_mode_ = control_mode::kOff;
+
   count_ = 0;
   n_joint_ = axons_.size();
   n_medulla_ = medullas_.size();
   n_sensillum_ = sensillums_.size();
 
   ph_joint_positions_data_.resize(n_joint_);
+  ph_kp_.resize(n_joint_);
+  ph_kd_.resize(n_joint_);
   ph_joint_velocities_data_.resize(n_joint_);
   ph_joint_positions_cmd_.resize(n_joint_);
   ph_joint_velocities_cmd_.resize(n_joint_);
@@ -62,6 +66,7 @@ DracoNodelet::DracoNodelet() {
   b_destruct_pnc_ = false;
   b_construct_pnc_ = false;
   b_gains_limits_ = false;
+  b_fake_estop_released_ = false;
 
   world_la_offset_.setZero();
   // TODO : tune this parameters
@@ -80,6 +85,8 @@ DracoNodelet::~DracoNodelet() {
   spin_thread_->join();
   for (int i = 0; i < n_joint_; ++i) {
     delete ph_joint_positions_data_[i];
+    delete ph_kp_[i];
+    delete ph_kd_[i];
     delete ph_joint_velocities_data_[i];
     delete ph_joint_positions_cmd_[i];
     delete ph_joint_velocities_cmd_[i];
@@ -117,6 +124,8 @@ void DracoNodelet::onInit() {
       "/gains_limits_handler", &DracoNodelet::GainsAndLimitsHandler, this);
   imu_handler_ =
       nh_.advertiseService("/imu_handler", &DracoNodelet::IMUHandler, this);
+  fake_estop_handler_ = nh_.advertiseService(
+      "/fake_estop_handler", &DracoNodelet::FakeEstopHandler, this);
 }
 
 void DracoNodelet::spinThread() {
@@ -140,25 +149,25 @@ void DracoNodelet::spinThread() {
 
   // main control loop
   while (sync_->ok()) {
-
     // wait for bus transaction
     sync_->awaitNextControl();
-
     // handle service calls based on the flag variables
     ProcessServiceCalls();
-
     // copy data
     CopyData();
-
-    if (sync_->printIndicatedFaults()) {
+    if (sync_->printIndicatedFaults() && (!b_fake_estop_released_)) {
       // faulted
+      SetSafeCommand();
     } else {
-      // compute commands
-      // pnc_interface_->getCommand(pnc_sensor_data_, pnc_command_);
-      // CopyCommand();
+      if (control_mode_ == control_mode::kMotorCurrent) {
+        // do nothing while going through initial ramp
+        SetSafeCommand();
+      } else {
+        // compute command from pnc
+        pnc_interface_->getCommand(pnc_sensor_data_, pnc_command_);
+        CopyCommand();
+      }
     }
-
-    // sync_->getLogger()->captureLine();
 
     // indicate that we're done
     sync_->finishControl();
@@ -168,6 +177,15 @@ void DracoNodelet::spinThread() {
   }
 
   sync_->awaitShutdownComplete();
+}
+
+void DracoNodelet::SetSafeCommand() {
+  for (int i = 0; i < n_joint_; ++i) {
+    *(ph_joint_positions_cmd_[i]) = *(ph_joint_positions_data_[i]);
+    *(ph_joint_velocities_cmd_[i]) = 0.;
+    *(ph_joint_efforts_cmd_[i]) = 0.;
+    *(ph_current_cmd_[i]) = 0.;
+  }
 }
 
 void DracoNodelet::ProcessServiceCalls() {
@@ -225,6 +243,13 @@ void DracoNodelet::RegisterData() {
                            axons_[i], false);
     ph_current_cmd_[i] = new float(0.);
     sync_->registerMOSIPtr(ph_current_cmd_[i], "cmd__motor__effort__a",
+                           axons_[i], false);
+
+    ph_kp_[i] = new float(0.);
+    sync_->registerMOSIPtr(ph_kp_[i], "gain__joint_impedance_kp__nmprad",
+                           axons_[i], false);
+    ph_kd_[i] = new float(0.);
+    sync_->registerMOSIPtr(ph_kd_[i], "gain__joint_impedance_kd__nmsprad",
                            axons_[i], false);
   }
 
@@ -393,13 +418,22 @@ void DracoNodelet::SetGainsAndLimits() {
 
   for (int i = 0; i < n_joint_; ++i) {
     if (b_conservative) {
+      *(ph_kp_[i]) = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "weak_kp");
+      *(ph_kd_[i]) = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "weak_kd");
       srv_float_kp.request.set_data = util::ReadParameter<float>(
           nodelet_cfg_["service_call"][joint_names_[i]], "weak_kp");
       srv_float_kd.request.set_data = util::ReadParameter<float>(
           nodelet_cfg_["service_call"][joint_names_[i]], "weak_kd");
       srv_float_current_limit.request.set_data = util::ReadParameter<float>(
           nodelet_cfg_["service_call"][joint_names_[i]], "weak_current_limit");
+      // nodelet_cfg_["service_call"][joint_names_[i]], "current_limit");
     } else {
+      *(ph_kp_[i]) = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "kp");
+      *(ph_kd_[i]) = util::ReadParameter<float>(
+          nodelet_cfg_["service_call"][joint_names_[i]], "kd");
       srv_float_kp.request.set_data = util::ReadParameter<float>(
           nodelet_cfg_["service_call"][joint_names_[i]], "kp");
       srv_float_kd.request.set_data = util::ReadParameter<float>(
@@ -459,13 +493,16 @@ bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
   if (data == 0) {
     std::cout << "[[[Change to Off Mode]]]" << std::endl;
     b_change_to_off_mode_ = true;
+    control_mode_ = control_mode::kOff;
     return true;
   } else if (data == 1) {
     std::cout << "[[[Change to MOTOR_CURRENT Mode]]]" << std::endl;
     b_change_to_motor_current_mode_ = true;
+    control_mode_ = control_mode::kMotorCurrent;
   } else if (data == 2) {
     std::cout << "[[[Change to JOINT_IMPEDANCE Mode]]]" << std::endl;
     b_change_to_joint_impedance_mode_ = true;
+    control_mode_ = control_mode::kJointImpedance;
     return true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
@@ -523,6 +560,24 @@ bool DracoNodelet::IMUHandler(apptronik_srvs::Float32::Request &req,
     std::cout << "[[[Reinitialize IMU]]]" << std::endl;
     b_initializing_imu_ = true;
     world_la_offset_list_.clear();
+    return true;
+  } else {
+    std::cout << "[[[Warning]]] Wrong Data Received for IMUHandler()"
+              << std::endl;
+    return false;
+  }
+}
+
+bool DracoNodelet::FakeEstopHandler(apptronik_srvs::Float32::Request &req,
+                                    apptronik_srvs::Float32::Response &res) {
+  double data = static_cast<double>(req.set_data);
+  if (data == 0) {
+    std::cout << "[[[Fake Estop Release]]]" << std::endl;
+    b_fake_estop_released_ = true;
+    return true;
+  } else if (data == 1) {
+    std::cout << "[[[Fake Estop Release]]]" << std::endl;
+    b_fake_estop_released_ = true;
     return true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for IMUHandler()"
