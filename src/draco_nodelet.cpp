@@ -54,6 +54,14 @@ DracoNodelet::DracoNodelet() {
   pnc_command_ = new DracoCommand();
 #endif
   b_initializing_imu_ = true;
+  world_la_offset_list_.clear();
+  b_change_to_off_mode_ = false;
+  b_change_to_motor_current_mode_ = false;
+  b_change_to_joint_impedance_mode_ = false;
+  b_clear_faults_ = false;
+  b_destruct_pnc_ = false;
+  b_construct_pnc_ = false;
+  b_gains_limits_ = false;
 
   world_la_offset_.setZero();
   // TODO : tune this parameters
@@ -105,8 +113,8 @@ void DracoNodelet::onInit() {
       nh_.advertiseService("/mode_handler", &DracoNodelet::ModeHandler, this);
   pnc_handler_ =
       nh_.advertiseService("/pnc_handler", &DracoNodelet::PnCHandler, this);
-  service_call_handler_ = nh_.advertiseService(
-      "/service_call_handler", &DracoNodelet::ServiceCallHandler, this);
+  gain_limit_handler_ = nh_.advertiseService(
+      "/gains_limits_handler", &DracoNodelet::GainsAndLimitsHandler, this);
   imu_handler_ =
       nh_.advertiseService("/imu_handler", &DracoNodelet::IMUHandler, this);
 }
@@ -117,15 +125,6 @@ void DracoNodelet::spinThread() {
   debug_interface_.reset(new aptk::util::DebugInterfacer(
       "draco", sync_->getNodeHandle(), sync_->getLogger()));
 
-  // TEST
-  std::cout << "================" << std::endl;
-  std::vector<std::string> tmp = sync_->getSlaveList();
-  for (int i = 0; i < tmp.size(); ++i) {
-    std::cout << tmp[i] << std::endl;
-  }
-  std::cout << "================" << std::endl;
-  // TEST
-
   vn_imu_ = new VN100Sensor("imu", imu_servo_rate_);
   vn_imu_->addDebugInterfaces(debug_interface_);
 
@@ -133,13 +132,11 @@ void DracoNodelet::spinThread() {
 
   RegisterData();
 
-  SetServiceCalls();
+  SetGainsAndLimits();
 
   TurnOffMotors();
 
   ClearFaults();
-
-  InitializeIMU();
 
   // main control loop
   while (sync_->ok()) {
@@ -147,7 +144,12 @@ void DracoNodelet::spinThread() {
     // wait for bus transaction
     sync_->awaitNextControl();
 
+    // handle service calls based on the flag variables
+    ProcessServiceCalls();
+
+    // copy data
     CopyData();
+
     if (sync_->printIndicatedFaults()) {
       // faulted
     } else {
@@ -156,7 +158,7 @@ void DracoNodelet::spinThread() {
       // CopyCommand();
     }
 
-    sync_->getLogger()->captureLine();
+    // sync_->getLogger()->captureLine();
 
     // indicate that we're done
     sync_->finishControl();
@@ -166,6 +168,38 @@ void DracoNodelet::spinThread() {
   }
 
   sync_->awaitShutdownComplete();
+}
+
+void DracoNodelet::ProcessServiceCalls() {
+
+  if (b_change_to_off_mode_) {
+    TurnOffMotors();
+    b_change_to_off_mode_ = false;
+  }
+  if (b_change_to_motor_current_mode_) {
+    TurnOnMotorCurrent();
+    b_change_to_motor_current_mode_ = false;
+  }
+  if (b_change_to_joint_impedance_mode_) {
+    TurnOnJointImpedance();
+    b_change_to_joint_impedance_mode_ = false;
+  }
+  if (b_clear_faults_) {
+    ClearFaults();
+    b_clear_faults_ = false;
+  }
+  if (b_construct_pnc_) {
+    ConstructPnC();
+    b_construct_pnc_ = false;
+  }
+  if (b_destruct_pnc_) {
+    DestructPnC();
+    b_destruct_pnc_ = false;
+  }
+  if (b_gains_limits_) {
+    SetGainsAndLimits();
+    b_gains_limits_ = false;
+  }
 }
 
 void DracoNodelet::RegisterData() {
@@ -261,7 +295,6 @@ void DracoNodelet::CopyData() {
                 << std::endl;
     }
   }
-
   vn_imu_->processData(timestamp, local_ned_q_frame, frameAVframe,
                        local_nedLAframe__delta_vel, status, world_la_offset_,
                        vel_damping_, damping_threshold_);
@@ -350,7 +383,8 @@ void DracoNodelet::CopyCommand() {
   }
 }
 
-void DracoNodelet::SetServiceCalls() {
+void DracoNodelet::SetGainsAndLimits() {
+  this->LoadConfigFile();
   bool b_conservative =
       util::ReadParameter<bool>(nodelet_cfg_["service_call"], "conservative");
   apptronik_srvs::Float32 srv_float_kp;
@@ -407,11 +441,11 @@ bool DracoNodelet::FaultHandler(apptronik_srvs::Float32::Request &req,
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Clear the faults]]]" << std::endl;
-    ClearFaults();
+    b_clear_faults_ = true;
     return true;
   } else if (data == 1) {
     std::cout << "[[[Clear the faults]]]" << std::endl;
-    ClearFaults();
+    b_clear_faults_ = true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
               << std::endl;
@@ -424,14 +458,14 @@ bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Change to Off Mode]]]" << std::endl;
-    TurnOffMotors();
+    b_change_to_off_mode_ = true;
     return true;
   } else if (data == 1) {
     std::cout << "[[[Change to MOTOR_CURRENT Mode]]]" << std::endl;
-    TurnOnMotorCurrent();
+    b_change_to_motor_current_mode_ = true;
   } else if (data == 2) {
     std::cout << "[[[Change to JOINT_IMPEDANCE Mode]]]" << std::endl;
-    TurnOnJointImpedance();
+    b_change_to_joint_impedance_mode_ = true;
     return true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
@@ -445,13 +479,11 @@ bool DracoNodelet::PnCHandler(apptronik_srvs::Float32::Request &req,
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Destruct PnC]]]" << std::endl;
-    DestructPnC();
-    std::cout << "PnC is destructed" << std::endl;
+    b_destruct_pnc_ = true;
     return true;
   } else if (data == 1) {
     std::cout << "[[[Construct PnC]]]" << std::endl;
-    std::cout << "PnC is constructed" << std::endl;
-    ConstructPnC();
+    b_construct_pnc_ = true;
     return true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for PnCHandler()"
@@ -460,20 +492,20 @@ bool DracoNodelet::PnCHandler(apptronik_srvs::Float32::Request &req,
   }
 }
 
-bool DracoNodelet::ServiceCallHandler(apptronik_srvs::Float32::Request &req,
-                                      apptronik_srvs::Float32::Response &res) {
-  this->LoadConfigFile();
+bool DracoNodelet::GainsAndLimitsHandler(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Reset Gains and Current Limits]]]" << std::endl;
-    SetServiceCalls();
+    b_gains_limits_ = true;
     return true;
   } else if (data == 1) {
     std::cout << "[[[Reset Gains and Current Limits]]]" << std::endl;
-    SetServiceCalls();
+    b_gains_limits_ = true;
     return true;
   } else {
-    std::cout << "[[[Warning]]] Wrong Data Received for ServiceCallHandler()"
+    std::cout << "[[[Warning]]] Wrong Data Received for GainsAndLimitsHandler()"
               << std::endl;
     return false;
   }
@@ -484,11 +516,13 @@ bool DracoNodelet::IMUHandler(apptronik_srvs::Float32::Request &req,
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
     std::cout << "[[[Reinitialize IMU]]]" << std::endl;
-    InitializeIMU();
+    b_initializing_imu_ = true;
+    world_la_offset_list_.clear();
     return true;
   } else if (data == 1) {
     std::cout << "[[[Reinitialize IMU]]]" << std::endl;
-    InitializeIMU();
+    b_initializing_imu_ = true;
+    world_la_offset_list_.clear();
     return true;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for IMUHandler()"
@@ -499,21 +533,11 @@ bool DracoNodelet::IMUHandler(apptronik_srvs::Float32::Request &req,
 
 void DracoNodelet::TurnOffMotors() {
   for (int i = 0; i < n_joint_; ++i) {
-    std::cout << "i : " << i << std::endl;
-    std::cout << "name : " << axons_[i] << std::endl;
     sync_->changeMode("OFF", axons_[i]);
   }
 }
 
 void DracoNodelet::TurnOnJointImpedance() {
-  // sync_->changeMode("JOINT_IMPEDANCE", "Neck_Pitch");
-  // std::cout << "0" << std::endl;
-  // sync_->changeMode("JOINT_IMPEDANCE", "R_Hip_IE");
-  // std::cout << "1" << std::endl;
-  // sync_->changeMode("JOINT_IMPEDANCE", "R_Hip_AA");
-  // std::cout << "2" << std::endl;
-  // sync_->changeMode("JOINT_IMPEDANCE", "R_Hip_FE");
-  // std::cout << "3" << std::endl;
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
   }
@@ -529,11 +553,6 @@ void DracoNodelet::ClearFaults() {
   for (int i = 0; i < n_joint_; ++i) {
     sync_->clearFaults(axons_[i]);
   }
-}
-
-void DracoNodelet::InitializeIMU() {
-  b_initializing_imu_ = true;
-  world_la_offset_list_.clear();
 }
 
 void DracoNodelet::LoadConfigFile() {

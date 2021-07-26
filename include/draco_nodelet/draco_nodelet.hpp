@@ -40,7 +40,7 @@ private:
   // service calls
   ros::ServiceServer mode_handler_;
   ros::ServiceServer pnc_handler_;
-  ros::ServiceServer service_call_handler_;
+  ros::ServiceServer gain_limit_handler_;
   ros::ServiceServer imu_handler_;
   ros::ServiceServer fault_handler_;
 
@@ -101,6 +101,13 @@ private:
   // flags
   bool b_pnc_alive_;
   bool b_initializing_imu_;
+  bool b_change_to_joint_impedance_mode_;
+  bool b_change_to_off_mode_;
+  bool b_change_to_motor_current_mode_;
+  bool b_clear_faults_;
+  bool b_destruct_pnc_;
+  bool b_construct_pnc_;
+  bool b_gains_limits_;
 
   // register miso and mosi topics to the placeholders
   void RegisterData();
@@ -112,7 +119,7 @@ private:
   void CopyCommand();
 
   // read yaml, and set gains and current limits
-  void SetServiceCalls();
+  void SetGainsAndLimits();
 
   // construct pnc
   void ConstructPnC();
@@ -122,6 +129,9 @@ private:
 
   // load config yaml files
   void LoadConfigFile();
+
+  // process service calls based on the flag variable
+  void ProcessServiceCalls();
 
   // change mode
   // 0: Off
@@ -146,10 +156,10 @@ private:
   bool IMUHandler(apptronik_srvs::Float32::Request &req,
                   apptronik_srvs::Float32::Response &res);
 
-  // set service call
+  // set gains and limits
   // 0 or 1 : Set service call with current yaml file
-  bool ServiceCallHandler(apptronik_srvs::Float32::Request &req,
-                          apptronik_srvs::Float32::Response &res);
+  bool GainsAndLimitsHandler(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
 
   // turn off the motors
   void TurnOffMotors();
@@ -159,8 +169,6 @@ private:
   void TurnOnMotorCurrent();
   // clear faults on motors
   void ClearFaults();
-  // update world_la_offset_
-  void InitializeIMU();
 
   template <class SrvType>
   void CallGetService(const std::string &slave_name,
