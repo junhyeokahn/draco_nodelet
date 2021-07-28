@@ -58,6 +58,7 @@ private:
   double pnc_dt_;
   double imu_servo_rate_;
   int count_;
+  double sleep_time_;
 
   // counting
   int n_joint_;
@@ -121,6 +122,7 @@ private:
   bool b_construct_pnc_;
   bool b_gains_limits_;
   bool b_fake_estop_released_;
+  std::string target_joint_; // for the purpose of moving joint one by one.
 
   // register miso and mosi topics to the placeholders
   void RegisterData();
@@ -175,7 +177,8 @@ private:
                              apptronik_srvs::Float32::Response &res);
 
   // set gains and limits
-  // 0 or 1 : Fake estop release
+  // 0: Fake estop enabled
+  // 1 : Fake estop disabled
   bool FakeEstopHandler(apptronik_srvs::Float32::Request &req,
                         apptronik_srvs::Float32::Response &res);
 

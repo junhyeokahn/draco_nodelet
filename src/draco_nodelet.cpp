@@ -34,6 +34,7 @@ DracoNodelet::DracoNodelet() {
   control_mode_ = control_mode::kOff;
 
   count_ = 0;
+  sleep_time_ = 0.5;
   n_joint_ = axons_.size();
   n_medulla_ = medullas_.size();
   n_sensillum_ = sensillums_.size();
@@ -69,16 +70,6 @@ DracoNodelet::DracoNodelet() {
   b_fake_estop_released_ = false;
 
   world_la_offset_.setZero();
-  // TODO : tune this parameters
-  vel_damping_ = util::ReadParameter<double>(nodelet_cfg_, "vel_damping");
-  // TODO : tune this parameters
-  damping_threshold_ =
-      util::ReadParameter<double>(nodelet_cfg_, "damping_threshold");
-  n_data_for_imu_initialize_ =
-      util::ReadParameter<int>(nodelet_cfg_, "n_data_for_imu_initialize");
-
-  contact_threshold_ =
-      util::ReadParameter<double>(nodelet_cfg_, "contact_threshold");
 }
 
 DracoNodelet::~DracoNodelet() {
@@ -222,6 +213,8 @@ void DracoNodelet::ProcessServiceCalls() {
 
 void DracoNodelet::RegisterData() {
   std::cout << "DracoNodelet::RegisterData()" << std::endl;
+  int r_ankle_ie_idx(0), l_ankle_ie_idx(0), r_ankle_fe_idx(0),
+      l_ankle_fe_idx(0);
   for (int i = 0; i < n_joint_; ++i) {
     // register encoder data
     ph_joint_positions_data_[i] = new float(0.);
@@ -251,6 +244,16 @@ void DracoNodelet::RegisterData() {
     ph_kd_[i] = new float(0.);
     sync_->registerMOSIPtr(ph_kd_[i], "gain__joint_impedance_kd__nmsprad",
                            axons_[i], false);
+
+    // for linkage table
+    if (axons_[i] == "R_Ankle_FE") {
+      sync_->registerMOSIPtr(ph_joint_positions_data_[i],
+                             "ext__joint_position__rad", "R_Ankle_IE", false);
+    }
+    if (axons_[i] == "L_Ankle_FE") {
+      sync_->registerMOSIPtr(ph_joint_positions_data_[i],
+                             "ext__joint_position__rad", "L_Ankle_IE", false);
+    }
   }
 
   ph_imu_quaternion_w_ned_ = new float(0.);
@@ -442,9 +445,12 @@ void DracoNodelet::SetGainsAndLimits() {
           nodelet_cfg_["service_call"][joint_names_[i]], "current_limit");
     }
     CallSetService(axons_[i], "Control__Joint__Impedance__KP", srv_float_kp);
+    sleep(sleep_time_);
     CallSetService(axons_[i], "Control__Joint__Impedance__KD", srv_float_kd);
+    sleep(sleep_time_);
     CallSetService(axons_[i], "Limits__Motor__Effort__Saturate__Relative_val",
                    srv_float_current_limit);
+    sleep(sleep_time_);
   }
 }
 
@@ -572,11 +578,11 @@ bool DracoNodelet::FakeEstopHandler(apptronik_srvs::Float32::Request &req,
                                     apptronik_srvs::Float32::Response &res) {
   double data = static_cast<double>(req.set_data);
   if (data == 0) {
-    std::cout << "[[[Fake Estop Release]]]" << std::endl;
-    b_fake_estop_released_ = true;
+    std::cout << "[[[Fake Estop Enabled]]]" << std::endl;
+    b_fake_estop_released_ = false;
     return true;
   } else if (data == 1) {
-    std::cout << "[[[Fake Estop Release]]]" << std::endl;
+    std::cout << "[[[Fake Estop Disabled]]]" << std::endl;
     b_fake_estop_released_ = true;
     return true;
   } else {
@@ -589,24 +595,33 @@ bool DracoNodelet::FakeEstopHandler(apptronik_srvs::Float32::Request &req,
 void DracoNodelet::TurnOffMotors() {
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("OFF", axons_[i]);
+    sleep(sleep_time_);
   }
 }
 
 void DracoNodelet::TurnOnJointImpedance() {
-  for (int i = 0; i < n_joint_; ++i) {
-    sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
+  if (b_pnc_alive_) {
+    for (int i = 0; i < n_joint_; ++i) {
+      sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
+      sleep(sleep_time_);
+    }
+  } else {
+    std::cout << "PnC is not alive. Construct PnC before change the mode"
+              << std::endl;
   }
 }
 
 void DracoNodelet::TurnOnMotorCurrent() {
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("MOTOR_CURRENT", axons_[i]);
+    sleep(sleep_time_);
   }
 }
 
 void DracoNodelet::ClearFaults() {
   for (int i = 0; i < n_joint_; ++i) {
     sync_->clearFaults(axons_[i]);
+    sleep(sleep_time_);
   }
 }
 
@@ -618,6 +633,20 @@ void DracoNodelet::LoadConfigFile() {
   nodelet_cfg_ = YAML::LoadFile(THIS_COM "config/draco/nodelet.yaml");
   pnc_cfg_ = YAML::LoadFile(THIS_COM "config/draco/pnc.yaml");
 #endif
+
+  target_joint_ =
+      util::ReadParameter<std::string>(nodelet_cfg_, "target_joint");
+
+  // TODO : tune this parameters
+  vel_damping_ = util::ReadParameter<double>(nodelet_cfg_, "vel_damping");
+  // TODO : tune this parameters
+  damping_threshold_ =
+      util::ReadParameter<double>(nodelet_cfg_, "damping_threshold");
+  n_data_for_imu_initialize_ =
+      util::ReadParameter<int>(nodelet_cfg_, "n_data_for_imu_initialize");
+
+  contact_threshold_ =
+      util::ReadParameter<double>(nodelet_cfg_, "contact_threshold");
 }
 
 template <class SrvType>
