@@ -12,6 +12,9 @@ DracoNodelet::DracoNodelet() {
   imu_servo_rate_ = util::ReadParameter<double>(nodelet_cfg_, "imu_servo_rate");
   pnc_dt_ = util::ReadParameter<double>(pnc_cfg_, "servo_dt");
 
+  lower_leg_axons_ = {"R_Hip_IE",  "R_Hip_AA",   "R_Hip_FE",
+                      "R_Knee_FE", "R_Ankle_FE", "R_Ankle_IE"};
+
   axons_ = {"Neck_Pitch",    "R_Hip_IE",      "R_Hip_AA",      "R_Hip_FE",
             "R_Knee_FE",     "R_Ankle_FE",    "R_Ankle_IE",    "L_Hip_IE",
             "L_Hip_AA",      "L_Hip_FE",      "L_Knee_FE",     "L_Ankle_FE",
@@ -68,6 +71,8 @@ DracoNodelet::DracoNodelet() {
   b_construct_pnc_ = false;
   b_gains_limits_ = false;
   b_fake_estop_released_ = false;
+  b_interrupt_ = false;
+  interrupt_data_ = 0;
 
   world_la_offset_.setZero();
 }
@@ -117,6 +122,8 @@ void DracoNodelet::onInit() {
       nh_.advertiseService("/imu_handler", &DracoNodelet::IMUHandler, this);
   fake_estop_handler_ = nh_.advertiseService(
       "/fake_estop_handler", &DracoNodelet::FakeEstopHandler, this);
+  interrupt_handler_ = nh_.advertiseService(
+      "/interrupt_handler", &DracoNodelet::InterruptHandler, this);
 }
 
 void DracoNodelet::spinThread() {
@@ -208,6 +215,19 @@ void DracoNodelet::ProcessServiceCalls() {
   if (b_gains_limits_) {
     SetGainsAndLimits();
     b_gains_limits_ = false;
+  }
+  if (b_interrupt_) {
+#if B_FIXED_CONFIGURATION
+    if (interrupt_data_ == 4) {
+      // left leg swing
+      pnc_interface_->interrupt->b_interrupt_button_a = true;
+    } else if (interrupt_data_ == 6) {
+      // right leg swing
+      pnc_interface_->interrupt->b_interrupt_button_d = true;
+    }
+#else
+#endif
+    b_interrupt_ = false;
   }
 }
 
@@ -493,6 +513,12 @@ bool DracoNodelet::FaultHandler(apptronik_srvs::Float32::Request &req,
   }
 }
 
+bool DracoNodelet::InterruptHandler(apptronik_srvs::Float32::Request &req,
+                                    apptronik_srvs::Float32::Response &res) {
+  b_interrupt_ = true;
+  interrupt_data_ = static_cast<int>(req.set_data);
+}
+
 bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
                                apptronik_srvs::Float32::Response &res) {
   double data = static_cast<double>(req.set_data);
@@ -593,6 +619,9 @@ bool DracoNodelet::FakeEstopHandler(apptronik_srvs::Float32::Request &req,
 }
 
 void DracoNodelet::TurnOffMotors() {
+  // TEST
+  b_fake_estop_released_ = false;
+  // TEST ENd
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("OFF", axons_[i]);
     sleep(sleep_time_);
@@ -600,15 +629,27 @@ void DracoNodelet::TurnOffMotors() {
 }
 
 void DracoNodelet::TurnOnJointImpedance() {
+  // TEST
+  b_fake_estop_released_ = true;
   if (b_pnc_alive_) {
-    for (int i = 0; i < n_joint_; ++i) {
-      sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
+    for (int i = 0; i < lower_leg_axons_.size(); ++i) {
+      sync_->changeMode("JOINT_IMPEDANCE", lower_leg_axons_[i]);
       sleep(sleep_time_);
     }
   } else {
     std::cout << "PnC is not alive. Construct PnC before change the mode"
               << std::endl;
   }
+  // TEST ENd
+  //  if (b_pnc_alive_) {
+  // for (int i = 0; i < n_joint_; ++i) {
+  // sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
+  // sleep(sleep_time_);
+  //}
+  //} else {
+  // std::cout << "PnC is not alive. Construct PnC before change the mode"
+  //<< std::endl;
+  //}
 }
 
 void DracoNodelet::TurnOnMotorCurrent() {

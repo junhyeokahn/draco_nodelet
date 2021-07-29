@@ -53,6 +53,7 @@ private:
   ros::ServiceServer imu_handler_;
   ros::ServiceServer fault_handler_;
   ros::ServiceServer fake_estop_handler_;
+  ros::ServiceServer interrupt_handler_;
 
   // timing
   double pnc_dt_;
@@ -67,6 +68,7 @@ private:
 
   // electronic boards naming
   std::vector<std::string> axons_;
+  std::vector<std::string> lower_leg_axons_;
   std::vector<std::string> medullas_;
   std::vector<std::string> sensillums_;
 
@@ -122,6 +124,8 @@ private:
   bool b_construct_pnc_;
   bool b_gains_limits_;
   bool b_fake_estop_released_;
+  bool b_interrupt_;
+  int interrupt_data_;
   std::string target_joint_; // for the purpose of moving joint one by one.
 
   // register miso and mosi topics to the placeholders
@@ -175,6 +179,13 @@ private:
   // 0 or 1 : Set service call with current yaml file
   bool GainsAndLimitsHandler(apptronik_srvs::Float32::Request &req,
                              apptronik_srvs::Float32::Response &res);
+
+  // interrupt handler
+  // fixed draco configuration
+  //     4: swing left leg
+  //     6: swing right leg
+  bool InterruptHandler(apptronik_srvs::Float32::Request &req,
+                        apptronik_srvs::Float32::Response &res);
 
   // set gains and limits
   // 0: Fake estop enabled
