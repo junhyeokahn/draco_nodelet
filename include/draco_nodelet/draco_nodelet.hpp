@@ -19,6 +19,7 @@
 #else
 #include <pnc/draco_pnc/draco_interface.hpp>
 #endif
+#include <utils/clock.hpp>
 #include <utils/util.hpp>
 
 namespace draco_nodelet {
@@ -37,6 +38,10 @@ public:
   ~DracoNodelet();
 
 private:
+  // TEST
+  aptk::ctrl::VN100Sensor *vn_imu_;
+  // TEST END
+
   int control_mode_;
 
   // RT kernel
@@ -44,20 +49,17 @@ private:
   boost::shared_ptr<aptk::comm::Synchronizer> sync_;
   boost::shared_ptr<boost::thread> spin_thread_;
   boost::shared_ptr<aptk::util::DebugInterfacer> debug_interface_;
-  aptk::ctrl::VN100Sensor *vn_imu_;
 
   // service calls
   ros::ServiceServer mode_handler_;
   ros::ServiceServer pnc_handler_;
   ros::ServiceServer gain_limit_handler_;
-  ros::ServiceServer imu_handler_;
   ros::ServiceServer fault_handler_;
   ros::ServiceServer fake_estop_handler_;
   ros::ServiceServer interrupt_handler_;
 
   // timing
   double pnc_dt_;
-  double imu_servo_rate_;
   int count_;
   double sleep_time_;
 
@@ -87,7 +89,6 @@ private:
   std::vector<float *> ph_kd_;
   float *ph_imu_quaternion_w_ned_, *ph_imu_quaternion_x_ned_,
       *ph_imu_quaternion_y_ned_, *ph_imu_quaternion_z_ned_;
-  float *ph_imu_dvel_x_, *ph_imu_dvel_y_, *ph_imu_dvel_z_;
   float *ph_imu_ang_vel_x_, *ph_imu_ang_vel_y_, *ph_imu_ang_vel_z_;
   float *ph_rfoot_sg_, *ph_lfoot_sg_;
 
@@ -102,16 +103,18 @@ private:
   DracoCommand *pnc_command_;
 #endif
 
+  Clock clock_;
+  bool b_measure_computation_time_;
+  double computation_time_;
+
+  Eigen::Quaternion<double> world_q_local_ned_;
+  Eigen::Quaternion<double> world_q_imu_;
+  Eigen::Vector3d world_av_imu_;
+
   double contact_threshold_;
 
   YAML::Node nodelet_cfg_;
   YAML::Node pnc_cfg_;
-
-  Eigen::Vector3d world_la_offset_;
-  std::vector<Eigen::Vector3d> world_la_offset_list_;
-  int n_data_for_imu_initialize_;
-  double vel_damping_;
-  double damping_threshold_;
 
   // flags
   bool b_pnc_alive_;
@@ -169,11 +172,6 @@ private:
   // 0 or 1 : Clear the faults
   bool FaultHandler(apptronik_srvs::Float32::Request &req,
                     apptronik_srvs::Float32::Response &res);
-
-  // reinitialize imu
-  // 0 or 1 : Initialize
-  bool IMUHandler(apptronik_srvs::Float32::Request &req,
-                  apptronik_srvs::Float32::Response &res);
 
   // set gains and limits
   // 0 or 1 : Set service call with current yaml file

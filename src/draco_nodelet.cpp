@@ -9,8 +9,12 @@ DracoNodelet::DracoNodelet() {
 
   this->LoadConfigFile();
 
-  imu_servo_rate_ = util::ReadParameter<double>(nodelet_cfg_, "imu_servo_rate");
-  pnc_dt_ = util::ReadParameter<double>(pnc_cfg_, "servo_dt");
+  medullas_ = {"Medulla", "Medulla_V4"};
+  sensillums_ = {"Sensillum_v2"};
+
+  // TEST
+  // Full configuration of the robot
+  /*
 
   lower_leg_axons_ = {"R_Hip_IE",  "R_Hip_AA",   "R_Hip_FE",
                       "R_Knee_FE", "R_Ankle_FE", "R_Ankle_IE"};
@@ -22,8 +26,6 @@ DracoNodelet::DracoNodelet() {
             "L_Elbow",       "L_Wrist_Roll",  "L_Wrist_Pitch", "R_Shoulder_FE",
             "R_Shoulder_AA", "R_Shoulder_IE", "R_Elbow",       "R_Wrist_Roll",
             "R_Wrist_Pitch"};
-  medullas_ = {"Medulla", "Medulla_V4"};
-  sensillums_ = {"Sensillum_v2"};
 
   joint_names_ = {
       "neck_pitch",    "r_hip_ie",      "r_hip_aa",      "r_hip_fe",
@@ -33,6 +35,26 @@ DracoNodelet::DracoNodelet() {
       "l_elbow_fe",    "l_wrist_ps",    "l_wrist_pitch", "r_shoulder_fe",
       "r_shoulder_aa", "r_shoulder_ie", "r_elbow_fe",    "r_wrist_ps",
       "r_wrist_pitch"};
+
+  */
+
+  // Exclude Right leg
+  lower_leg_axons_ = {"L_Hip_IE",  "L_Hip_AA",   "L_Hip_FE",
+                      "L_Knee_FE", "L_Ankle_FE", "L_Ankle_IE"};
+
+  axons_ = {"Neck_Pitch",    "L_Hip_IE",      "L_Hip_AA",      "L_Hip_FE",
+            "L_Knee_FE",     "L_Ankle_FE",    "L_Ankle_IE",    "L_Shoulder_FE",
+            "L_Shoulder_AA", "L_Shoulder_IE", "L_Elbow",       "L_Wrist_Roll",
+            "L_Wrist_Pitch", "R_Shoulder_FE", "R_Shoulder_AA", "R_Shoulder_IE",
+            "R_Elbow",       "R_Wrist_Roll",  "R_Wrist_Pitch"};
+
+  joint_names_ = {
+      "neck_pitch",    "l_hip_ie",      "l_hip_aa",      "l_hip_fe",
+      "l_knee_fe",     "l_ankle_fe",    "l_ankle_ie",    "l_shoulder_fe",
+      "l_shoulder_aa", "l_shoulder_ie", "l_elbow_fe",    "l_wrist_ps",
+      "l_wrist_pitch", "r_shoulder_fe", "r_shoulder_aa", "r_shoulder_ie",
+      "r_elbow_fe",    "r_wrist_ps",    "r_wrist_pitch"};
+  // TEST END
 
   control_mode_ = control_mode::kOff;
 
@@ -61,8 +83,16 @@ DracoNodelet::DracoNodelet() {
   pnc_sensor_data_ = new DracoSensorData();
   pnc_command_ = new DracoCommand();
 #endif
+  clock_ = Clock();
+  computation_time_ = 0.;
+
+  // for changing orientation standard local NED -> ROS standard by rotating
+  // 180deg on x axis
+  world_q_local_ned_ = Eigen::Quaternion<double>(0, 1, 0, 0);
+  world_q_imu_ = Eigen::Quaternion<double>::Identity();
+  world_av_imu_.setZero();
+
   b_initializing_imu_ = true;
-  world_la_offset_list_.clear();
   b_change_to_off_mode_ = false;
   b_change_to_motor_current_mode_ = false;
   b_change_to_joint_impedance_mode_ = false;
@@ -73,8 +103,6 @@ DracoNodelet::DracoNodelet() {
   b_fake_estop_released_ = false;
   b_interrupt_ = false;
   interrupt_data_ = 0;
-
-  world_la_offset_.setZero();
 }
 
 DracoNodelet::~DracoNodelet() {
@@ -93,16 +121,11 @@ DracoNodelet::~DracoNodelet() {
   delete ph_imu_quaternion_x_ned_;
   delete ph_imu_quaternion_y_ned_;
   delete ph_imu_quaternion_z_ned_;
-  delete ph_imu_dvel_x_;
-  delete ph_imu_dvel_y_;
-  delete ph_imu_dvel_z_;
   delete ph_imu_ang_vel_x_;
   delete ph_imu_ang_vel_y_;
   delete ph_imu_ang_vel_z_;
   delete ph_rfoot_sg_;
   delete ph_lfoot_sg_;
-
-  delete vn_imu_;
 }
 
 void DracoNodelet::onInit() {
@@ -118,8 +141,6 @@ void DracoNodelet::onInit() {
       nh_.advertiseService("/pnc_handler", &DracoNodelet::PnCHandler, this);
   gain_limit_handler_ = nh_.advertiseService(
       "/gains_limits_handler", &DracoNodelet::GainsAndLimitsHandler, this);
-  imu_handler_ =
-      nh_.advertiseService("/imu_handler", &DracoNodelet::IMUHandler, this);
   fake_estop_handler_ = nh_.advertiseService(
       "/fake_estop_handler", &DracoNodelet::FakeEstopHandler, this);
   interrupt_handler_ = nh_.advertiseService(
@@ -131,9 +152,15 @@ void DracoNodelet::spinThread() {
   sync_->connect();
   debug_interface_.reset(new aptk::util::DebugInterfacer(
       "draco", sync_->getNodeHandle(), sync_->getLogger()));
+  debug_interface_->addPrimitive(&computation_time_, "pnc_computation_time");
+  debug_interface_->addEigen(&world_q_imu_.coeffs(), "world_q_imu",
+                             {"x", "y", "z", "w"});
+  debug_interface_->addEigen(&world_av_imu_, "world_av_imu", {"x", "y", "z"});
 
-  vn_imu_ = new VN100Sensor("imu", imu_servo_rate_);
+  // TEST
+  vn_imu_ = new VN100Sensor("imu", 800);
   vn_imu_->addDebugInterfaces(debug_interface_);
+  // TESTEND
 
   aptk::comm::enableRT(5, 2);
 
@@ -162,7 +189,13 @@ void DracoNodelet::spinThread() {
         SetSafeCommand();
       } else {
         // compute command from pnc
+        if (b_measure_computation_time_) {
+          clock_.start();
+        }
         pnc_interface_->getCommand(pnc_sensor_data_, pnc_command_);
+        if (b_measure_computation_time_) {
+          computation_time_ = clock_.stop();
+        }
         CopyCommand();
       }
     }
@@ -288,15 +321,6 @@ void DracoNodelet::RegisterData() {
   ph_imu_quaternion_z_ned_ = new float(0.);
   sync_->registerMISOPtr(ph_imu_quaternion_z_ned_, "IMU__quaternion_z__mps2",
                          sensillums_[0], false);
-  ph_imu_dvel_x_ = new float(0.);
-  sync_->registerMISOPtr(ph_imu_dvel_x_, "IMU__dVel_x__rad", sensillums_[0],
-                         false);
-  ph_imu_dvel_y_ = new float(0.);
-  sync_->registerMISOPtr(ph_imu_dvel_y_, "IMU__dVel_y__rad", sensillums_[0],
-                         false);
-  ph_imu_dvel_z_ = new float(0.);
-  sync_->registerMISOPtr(ph_imu_dvel_z_, "IMU__dVel_z__rad", sensillums_[0],
-                         false);
   ph_imu_ang_vel_x_ = new float(0.);
   sync_->registerMISOPtr(ph_imu_ang_vel_x_, "IMU__comp_angularRate_x__radps",
                          sensillums_[0], false);
@@ -313,52 +337,53 @@ void DracoNodelet::RegisterData() {
 }
 
 void DracoNodelet::CopyData() {
-#if B_FIXED_CONFIGURATION
-  // skip updating imu processing and contact sensor processing
-#else
   // Process IMU
-  uint16_t timestamp = sync_->getBusTimeNS();
   Eigen::Quaternion<double> local_ned_q_frame(
       *ph_imu_quaternion_w_ned_, *ph_imu_quaternion_x_ned_,
       *ph_imu_quaternion_y_ned_, *ph_imu_quaternion_z_ned_);
   Eigen::Vector3d frameAVframe(*ph_imu_ang_vel_x_, *ph_imu_ang_vel_y_,
                                *ph_imu_ang_vel_z_);
-  Eigen::Vector3d local_nedLAframe__delta_vel(*ph_imu_dvel_x_, *ph_imu_dvel_y_,
-                                              *ph_imu_dvel_z_);
-  uint16_t status = 0; // not used
+  world_q_imu_ = world_q_local_ned_ * local_ned_q_frame;
+  world_av_imu_ = world_q_imu_ * frameAVframe;
 
-  if (b_initializing_imu_) {
-    world_la_offset_list_.push_back(local_nedLAframe__delta_vel /
-                                    imu_servo_rate_);
-    if (world_la_offset_list_.size() == n_data_for_imu_initialize_) {
-      Eigen::Vector3d sum(0., 0., 0.);
-      for (int i = 0; i < n_data_for_imu_initialize_; ++i) {
-        sum += world_la_offset_list_[i];
-      }
-      world_la_offset_ = sum / n_data_for_imu_initialize_;
-      world_la_offset_list_.clear();
-      b_initializing_imu_ = false;
-      std::cout << "[IMU initialized]" << std::endl;
-      std::cout << "world_la_offset_: " << world_la_offset_.transpose()
-                << std::endl;
-    }
-  }
-  vn_imu_->processData(timestamp, local_ned_q_frame, frameAVframe,
-                       local_nedLAframe__delta_vel, status, world_la_offset_,
-                       vel_damping_, damping_threshold_);
   // Set imu data
   Eigen::Isometry3d worldTframe;
   Eigen::Vector6d worldSVframe;
+  worldTframe.setIdentity();
+  worldSVframe.setZero();
 
+  worldTframe.rotate(world_q_imu_);
+  // worldTframe.linear() = world_q_imu_.normalized().toRotationMatrix();
+  worldSVframe.head(3) = world_av_imu_;
+
+  // TEST
+  std::cout << "---------------------" << std::endl;
+  std::cout << "before" << std::endl;
+  std::cout << worldTframe.linear() << std::endl;
+  std::cout << worldSVframe.head(3) << std::endl;
+  uint16_t timestamp = sync_->getBusTimeNS();
+
+  vn_imu_->processData(timestamp, local_ned_q_frame, frameAVframe,
+                       Eigen::Vector3d::Zero(), timestamp,
+                       Eigen::Vector3d::Zero(), 0., 0.);
   vn_imu_->estimateTwist(worldSVframe);
-  pnc_sensor_data_->imu_frame_vel = worldSVframe;
-
   vn_imu_->estimateTransform(worldTframe);
+  std::cout << "after" << std::endl;
+  std::cout << worldTframe.linear() << std::endl;
+  std::cout << worldSVframe.head(3) << std::endl;
+
+  // TEST END
+
   pnc_sensor_data_->imu_frame_iso.setIdentity();
   pnc_sensor_data_->imu_frame_iso.block(0, 0, 3, 3) = worldTframe.linear();
   pnc_sensor_data_->imu_frame_iso.block(0, 3, 3, 1) = worldTframe.translation();
 
+  pnc_sensor_data_->imu_frame_vel = worldSVframe;
+
   // Set contact bool
+#if B_FIXED_CONFIGURATION
+  // skip this
+#else
   if (*(ph_rfoot_sg_) > contact_threshold_) {
     pnc_sensor_data_->b_rf_contact = true;
   } else {
@@ -402,6 +427,24 @@ void DracoNodelet::CopyData() {
           static_cast<double>(*(ph_joint_velocities_data_[i]));
     }
   }
+
+  // TEST
+  // Send fake data to pnc
+  pnc_sensor_data_->joint_positions["r_hip_ie"] = 0.;
+  pnc_sensor_data_->joint_positions["r_hip_fe"] = 0.;
+  pnc_sensor_data_->joint_positions["r_hip_aa"] = 0.;
+  pnc_sensor_data_->joint_positions["r_knee_fe_jp"] = 0.;
+  pnc_sensor_data_->joint_positions["r_knee_fe_jd"] = 0.;
+  pnc_sensor_data_->joint_positions["r_ankle_ie"] = 0.;
+  pnc_sensor_data_->joint_positions["r_ankle_fe"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_hip_ie"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_hip_fe"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_hip_aa"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_knee_fe_jp"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_knee_fe_jd"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_ankle_ie"] = 0.;
+  pnc_sensor_data_->joint_velocities["r_ankle_fe"] = 0.;
+  // TEST END
 }
 
 void DracoNodelet::CopyCommand() {
@@ -580,26 +623,6 @@ bool DracoNodelet::GainsAndLimitsHandler(
   }
 }
 
-bool DracoNodelet::IMUHandler(apptronik_srvs::Float32::Request &req,
-                              apptronik_srvs::Float32::Response &res) {
-  double data = static_cast<double>(req.set_data);
-  if (data == 0) {
-    std::cout << "[[[Reinitialize IMU]]]" << std::endl;
-    b_initializing_imu_ = true;
-    world_la_offset_list_.clear();
-    return true;
-  } else if (data == 1) {
-    std::cout << "[[[Reinitialize IMU]]]" << std::endl;
-    b_initializing_imu_ = true;
-    world_la_offset_list_.clear();
-    return true;
-  } else {
-    std::cout << "[[[Warning]]] Wrong Data Received for IMUHandler()"
-              << std::endl;
-    return false;
-  }
-}
-
 bool DracoNodelet::FakeEstopHandler(apptronik_srvs::Float32::Request &req,
                                     apptronik_srvs::Float32::Response &res) {
   double data = static_cast<double>(req.set_data);
@@ -640,7 +663,6 @@ void DracoNodelet::TurnOnJointImpedance() {
     std::cout << "PnC is not alive. Construct PnC before change the mode"
               << std::endl;
   }
-  // TEST ENd
   //  if (b_pnc_alive_) {
   // for (int i = 0; i < n_joint_; ++i) {
   // sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
@@ -650,6 +672,7 @@ void DracoNodelet::TurnOnJointImpedance() {
   // std::cout << "PnC is not alive. Construct PnC before change the mode"
   //<< std::endl;
   //}
+  // TEST ENd
 }
 
 void DracoNodelet::TurnOnMotorCurrent() {
@@ -678,16 +701,12 @@ void DracoNodelet::LoadConfigFile() {
   target_joint_ =
       util::ReadParameter<std::string>(nodelet_cfg_, "target_joint");
 
-  // TODO : tune this parameters
-  vel_damping_ = util::ReadParameter<double>(nodelet_cfg_, "vel_damping");
-  // TODO : tune this parameters
-  damping_threshold_ =
-      util::ReadParameter<double>(nodelet_cfg_, "damping_threshold");
-  n_data_for_imu_initialize_ =
-      util::ReadParameter<int>(nodelet_cfg_, "n_data_for_imu_initialize");
-
   contact_threshold_ =
       util::ReadParameter<double>(nodelet_cfg_, "contact_threshold");
+
+  b_measure_computation_time_ =
+      util::ReadParameter<bool>(nodelet_cfg_, "b_measure_computation_time");
+  pnc_dt_ = util::ReadParameter<double>(pnc_cfg_, "servo_dt");
 }
 
 template <class SrvType>
