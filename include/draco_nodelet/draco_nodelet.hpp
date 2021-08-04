@@ -38,10 +38,6 @@ public:
   ~DracoNodelet();
 
 private:
-  // TEST
-  aptk::ctrl::VN100Sensor *vn_imu_;
-  // TEST END
-
   int control_mode_;
 
   // RT kernel
@@ -71,6 +67,7 @@ private:
   // electronic boards naming
   std::vector<std::string> axons_;
   std::vector<std::string> lower_leg_axons_;
+  std::vector<std::string> upper_body_axons_;
   std::vector<std::string> medullas_;
   std::vector<std::string> sensillums_;
 

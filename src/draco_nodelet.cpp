@@ -38,9 +38,12 @@ DracoNodelet::DracoNodelet() {
 
   */
 
-  // Exclude Right leg
+  // Right leg no communication
   lower_leg_axons_ = {"L_Hip_IE",  "L_Hip_AA",   "L_Hip_FE",
                       "L_Knee_FE", "L_Ankle_FE", "L_Ankle_IE"};
+  upper_body_axons_ = {"Neck_Pitch",    "R_Shoulder_FE", "R_Shoulder_AA",
+                       "R_Shoulder_IE", "R_Elbow",       "R_Wrist_Roll",
+                       "R_Wrist_Pitch"};
 
   axons_ = {"Neck_Pitch",    "L_Hip_IE",      "L_Hip_AA",      "L_Hip_FE",
             "L_Knee_FE",     "L_Ankle_FE",    "L_Ankle_IE",    "L_Shoulder_FE",
@@ -156,11 +159,6 @@ void DracoNodelet::spinThread() {
   debug_interface_->addEigen(&world_q_imu_.coeffs(), "world_q_imu",
                              {"x", "y", "z", "w"});
   debug_interface_->addEigen(&world_av_imu_, "world_av_imu", {"x", "y", "z"});
-
-  // TEST
-  vn_imu_ = new VN100Sensor("imu", 800);
-  vn_imu_->addDebugInterfaces(debug_interface_);
-  // TESTEND
 
   aptk::comm::enableRT(5, 2);
 
@@ -353,26 +351,7 @@ void DracoNodelet::CopyData() {
   worldSVframe.setZero();
 
   worldTframe.rotate(world_q_imu_);
-  // worldTframe.linear() = world_q_imu_.normalized().toRotationMatrix();
   worldSVframe.head(3) = world_av_imu_;
-
-  // TEST
-  std::cout << "---------------------" << std::endl;
-  std::cout << "before" << std::endl;
-  std::cout << worldTframe.linear() << std::endl;
-  std::cout << worldSVframe.head(3) << std::endl;
-  uint16_t timestamp = sync_->getBusTimeNS();
-
-  vn_imu_->processData(timestamp, local_ned_q_frame, frameAVframe,
-                       Eigen::Vector3d::Zero(), timestamp,
-                       Eigen::Vector3d::Zero(), 0., 0.);
-  vn_imu_->estimateTwist(worldSVframe);
-  vn_imu_->estimateTransform(worldTframe);
-  std::cout << "after" << std::endl;
-  std::cout << worldTframe.linear() << std::endl;
-  std::cout << worldSVframe.head(3) << std::endl;
-
-  // TEST END
 
   pnc_sensor_data_->imu_frame_iso.setIdentity();
   pnc_sensor_data_->imu_frame_iso.block(0, 0, 3, 3) = worldTframe.linear();
@@ -655,8 +634,13 @@ void DracoNodelet::TurnOnJointImpedance() {
   // TEST
   b_fake_estop_released_ = true;
   if (b_pnc_alive_) {
-    for (int i = 0; i < lower_leg_axons_.size(); ++i) {
-      sync_->changeMode("JOINT_IMPEDANCE", lower_leg_axons_[i]);
+    // lower leg only
+    // for (int i = 0; i < lower_leg_axons_.size(); ++i) {
+    // sync_->changeMode("JOINT_IMPEDANCE", lower_leg_axons_[i]);
+    // sleep(sleep_time_);
+    //}
+    for (int i = 0; i < upper_body_axons_.size(); ++i) {
+      sync_->changeMode("JOINT_IMPEDANCE", upper_body_axons_[i]);
       sleep(sleep_time_);
     }
   } else {
