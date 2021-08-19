@@ -55,7 +55,6 @@ private:
   ros::ServiceServer interrupt_handler_;
 
   // timing
-  double pnc_dt_;
   int count_;
   double sleep_time_;
 
@@ -117,6 +116,8 @@ private:
   bool b_pnc_alive_;
   bool b_initializing_imu_;
   bool b_change_to_joint_impedance_mode_;
+  bool b_change_lb_to_joint_impedance_mode_;
+  bool b_change_ub_to_joint_impedance_mode_;
   bool b_change_to_off_mode_;
   bool b_change_to_motor_current_mode_;
   bool b_clear_faults_;
@@ -125,6 +126,7 @@ private:
   bool b_gains_limits_;
   bool b_fake_estop_released_;
   bool b_interrupt_;
+  bool b_exp_ = false;
   int interrupt_data_;
   std::string target_joint_; // for the purpose of moving joint one by one.
 
@@ -156,6 +158,8 @@ private:
   // 0: Off
   // 1: CURRENT
   // 2: JOINT_IMPEDANCE
+  // 3: LB_JOINT_IMPEDANCE
+  // 4: UB_JOINT_IMPEDANCE
   bool ModeHandler(apptronik_srvs::Float32::Request &req,
                    apptronik_srvs::Float32::Response &res);
 
@@ -176,9 +180,12 @@ private:
                              apptronik_srvs::Float32::Response &res);
 
   // interrupt handler
-  // fixed draco configuration
+  // fixed configuration
   //     4: swing left leg
   //     6: swing right leg
+  // floating configuration
+  //     1: swaying
+  //     3: interpolate
   bool InterruptHandler(apptronik_srvs::Float32::Request &req,
                         apptronik_srvs::Float32::Response &res);
 
@@ -192,6 +199,10 @@ private:
   void TurnOffMotors();
   // turn on the motors to joint impedance mode
   void TurnOnJointImpedance();
+  // turn on the motors to joint impedance mode
+  void TurnOnUpperBodyJointImpedance();
+  // turn on the motors to joint impedance mode
+  void TurnOnLowerBodyJointImpedance();
   // turn on the motors to motor current mode
   void TurnOnMotorCurrent();
   // clear faults on motors

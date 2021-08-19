@@ -12,12 +12,16 @@ DracoNodelet::DracoNodelet() {
   medullas_ = {"Medulla", "Medulla_V4"};
   sensillums_ = {"Sensillum_v2"};
 
-  // TEST
   // Full configuration of the robot
-  /*
+  lower_leg_axons_ = {"R_Hip_IE",   "R_Hip_AA",   "R_Hip_FE",   "R_Knee_FE",
+                      "R_Ankle_FE", "R_Ankle_IE", "L_Hip_IE",   "L_Hip_AA",
+                      "L_Hip_FE",   "L_Knee_FE",  "L_Ankle_FE", "L_Ankle_IE"};
 
-  lower_leg_axons_ = {"R_Hip_IE",  "R_Hip_AA",   "R_Hip_FE",
-                      "R_Knee_FE", "R_Ankle_FE", "R_Ankle_IE"};
+  upper_body_axons_ = {"Neck_Pitch",    "R_Shoulder_FE", "R_Shoulder_AA",
+                       "R_Shoulder_IE", "R_Elbow",       "R_Wrist_Roll",
+                       "R_Wrist_Pitch", "L_Shoulder_FE", "L_Shoulder_AA",
+                       "L_Shoulder_IE", "L_Elbow",       "L_Wrist_Roll",
+                       "L_Wrist_Pitch"};
 
   axons_ = {"Neck_Pitch",    "R_Hip_IE",      "R_Hip_AA",      "R_Hip_FE",
             "R_Knee_FE",     "R_Ankle_FE",    "R_Ankle_IE",    "L_Hip_IE",
@@ -36,33 +40,31 @@ DracoNodelet::DracoNodelet() {
       "r_shoulder_aa", "r_shoulder_ie", "r_elbow_fe",    "r_wrist_ps",
       "r_wrist_pitch"};
 
-  */
+  // TEST: when the right leg was disconnected
+  // lower_leg_axons_ = {"L_Hip_IE",  "L_Hip_AA",   "L_Hip_FE",
+  //"L_Knee_FE", "L_Ankle_FE", "L_Ankle_IE"};
+  // upper_body_axons_ = {"Neck_Pitch",    "R_Shoulder_FE", "R_Shoulder_AA",
+  //"R_Shoulder_IE", "R_Elbow",       "R_Wrist_Roll",
+  //"R_Wrist_Pitch"};
 
-  // Right leg no communication
-  lower_leg_axons_ = {"L_Hip_IE",  "L_Hip_AA",   "L_Hip_FE",
-                      "L_Knee_FE", "L_Ankle_FE", "L_Ankle_IE"};
-  upper_body_axons_ = {"Neck_Pitch",    "R_Shoulder_FE", "R_Shoulder_AA",
-                       "R_Shoulder_IE", "R_Elbow",       "R_Wrist_Roll",
-                       "R_Wrist_Pitch"};
+  // axons_ = {"Neck_Pitch",    "L_Hip_IE",      "L_Hip_AA",      "L_Hip_FE",
+  //"L_Knee_FE",     "L_Ankle_FE",    "L_Ankle_IE",    "L_Shoulder_FE",
+  //"L_Shoulder_AA", "L_Shoulder_IE", "L_Elbow",       "L_Wrist_Roll",
+  //"L_Wrist_Pitch", "R_Shoulder_FE", "R_Shoulder_AA", "R_Shoulder_IE",
+  //"R_Elbow",       "R_Wrist_Roll",  "R_Wrist_Pitch"};
 
-  axons_ = {"Neck_Pitch",    "L_Hip_IE",      "L_Hip_AA",      "L_Hip_FE",
-            "L_Knee_FE",     "L_Ankle_FE",    "L_Ankle_IE",    "L_Shoulder_FE",
-            "L_Shoulder_AA", "L_Shoulder_IE", "L_Elbow",       "L_Wrist_Roll",
-            "L_Wrist_Pitch", "R_Shoulder_FE", "R_Shoulder_AA", "R_Shoulder_IE",
-            "R_Elbow",       "R_Wrist_Roll",  "R_Wrist_Pitch"};
-
-  joint_names_ = {
-      "neck_pitch",    "l_hip_ie",      "l_hip_aa",      "l_hip_fe",
-      "l_knee_fe",     "l_ankle_fe",    "l_ankle_ie",    "l_shoulder_fe",
-      "l_shoulder_aa", "l_shoulder_ie", "l_elbow_fe",    "l_wrist_ps",
-      "l_wrist_pitch", "r_shoulder_fe", "r_shoulder_aa", "r_shoulder_ie",
-      "r_elbow_fe",    "r_wrist_ps",    "r_wrist_pitch"};
+  // joint_names_ = {
+  //"neck_pitch",    "l_hip_ie",      "l_hip_aa",      "l_hip_fe",
+  //"l_knee_fe",     "l_ankle_fe",    "l_ankle_ie",    "l_shoulder_fe",
+  //"l_shoulder_aa", "l_shoulder_ie", "l_elbow_fe",    "l_wrist_ps",
+  //"l_wrist_pitch", "r_shoulder_fe", "r_shoulder_aa", "r_shoulder_ie",
+  //"r_elbow_fe",    "r_wrist_ps",    "r_wrist_pitch"};
   // TEST END
 
   control_mode_ = control_mode::kOff;
 
   count_ = 0;
-  sleep_time_ = 0.5;
+  sleep_time_ = 0.7;
   n_joint_ = axons_.size();
   n_medulla_ = medullas_.size();
   n_sensillum_ = sensillums_.size();
@@ -82,7 +84,7 @@ DracoNodelet::DracoNodelet() {
   pnc_sensor_data_ = new FixedDracoSensorData();
   pnc_command_ = new FixedDracoCommand();
 #else
-  pnc_interface_ = new DracoInterface(false);
+  pnc_interface_ = new DracoInterface();
   pnc_sensor_data_ = new DracoSensorData();
   pnc_command_ = new DracoCommand();
 #endif
@@ -99,6 +101,8 @@ DracoNodelet::DracoNodelet() {
   b_change_to_off_mode_ = false;
   b_change_to_motor_current_mode_ = false;
   b_change_to_joint_impedance_mode_ = false;
+  b_change_lb_to_joint_impedance_mode_ = false;
+  b_change_ub_to_joint_impedance_mode_ = false;
   b_clear_faults_ = false;
   b_destruct_pnc_ = false;
   b_construct_pnc_ = false;
@@ -231,6 +235,14 @@ void DracoNodelet::ProcessServiceCalls() {
     TurnOnJointImpedance();
     b_change_to_joint_impedance_mode_ = false;
   }
+  if (b_change_lb_to_joint_impedance_mode_) {
+    TurnOnLowerBodyJointImpedance();
+    b_change_lb_to_joint_impedance_mode_ = false;
+  }
+  if (b_change_ub_to_joint_impedance_mode_) {
+    TurnOnUpperBodyJointImpedance();
+    b_change_ub_to_joint_impedance_mode_ = false;
+  }
   if (b_clear_faults_) {
     ClearFaults();
     b_clear_faults_ = false;
@@ -255,8 +267,25 @@ void DracoNodelet::ProcessServiceCalls() {
     } else if (interrupt_data_ == 6) {
       // right leg swing
       pnc_interface_->interrupt->b_interrupt_button_d = true;
+    } else if (interrupt_data_ == 7) {
+      // left hand swing
+      pnc_interface_->interrupt->b_interrupt_button_w = true;
+    } else if (interrupt_data_ == 9) {
+      // right hand swing
+      pnc_interface_->interrupt->b_interrupt_button_s = true;
+    } else {
+      // do nothing
     }
 #else
+    if (interrupt_data_ == 1) {
+      // com swaying
+      pnc_interface_->interrupt->b_interrupt_button_r = true;
+    } else if (interrupt_data_ == 3) {
+      // com interpolate
+      pnc_interface_->interrupt->b_interrupt_button_f = true;
+    } else {
+      // do nothing
+    }
 #endif
     b_interrupt_ = false;
   }
@@ -407,22 +436,22 @@ void DracoNodelet::CopyData() {
     }
   }
 
-  // TEST
+  // TEST: when the right leg was disconnected
   // Send fake data to pnc
-  pnc_sensor_data_->joint_positions["r_hip_ie"] = 0.;
-  pnc_sensor_data_->joint_positions["r_hip_fe"] = 0.;
-  pnc_sensor_data_->joint_positions["r_hip_aa"] = 0.;
-  pnc_sensor_data_->joint_positions["r_knee_fe_jp"] = 0.;
-  pnc_sensor_data_->joint_positions["r_knee_fe_jd"] = 0.;
-  pnc_sensor_data_->joint_positions["r_ankle_ie"] = 0.;
-  pnc_sensor_data_->joint_positions["r_ankle_fe"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_hip_ie"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_hip_fe"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_hip_aa"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_knee_fe_jp"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_knee_fe_jd"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_ankle_ie"] = 0.;
-  pnc_sensor_data_->joint_velocities["r_ankle_fe"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_hip_ie"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_hip_fe"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_hip_aa"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_knee_fe_jp"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_knee_fe_jd"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_ankle_ie"] = 0.;
+  // pnc_sensor_data_->joint_positions["r_ankle_fe"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_hip_ie"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_hip_fe"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_hip_aa"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_knee_fe_jp"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_knee_fe_jd"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_ankle_ie"] = 0.;
+  // pnc_sensor_data_->joint_velocities["r_ankle_fe"] = 0.;
   // TEST END
 }
 
@@ -501,7 +530,11 @@ void DracoNodelet::ConstructPnC() {
 #if B_FIXED_CONFIGURATION
     pnc_interface_ = new FixedDracoInterface(false);
 #else
-    pnc_interface_ = new DracoInterface(false);
+    if (!b_exp_) {
+      std::cout << "Set b_exp true in yaml" << std::endl;
+      exit(0);
+    }
+    pnc_interface_ = new DracoInterface();
 #endif
     b_pnc_alive_ = true;
   } else {
@@ -558,6 +591,12 @@ bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
     b_change_to_joint_impedance_mode_ = true;
     control_mode_ = control_mode::kJointImpedance;
     return true;
+  } else if (data == 3) {
+    b_change_lb_to_joint_impedance_mode_ = true;
+    control_mode_ = control_mode::kJointImpedance;
+  } else if (data == 4) {
+    b_change_ub_to_joint_impedance_mode_ = true;
+    control_mode_ = control_mode::kJointImpedance;
   } else {
     std::cout << "[[[Warning]]] Wrong Data Received for ModeHandler()"
               << std::endl;
@@ -621,24 +660,16 @@ bool DracoNodelet::FakeEstopHandler(apptronik_srvs::Float32::Request &req,
 }
 
 void DracoNodelet::TurnOffMotors() {
-  // TEST
   b_fake_estop_released_ = false;
-  // TEST ENd
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("OFF", axons_[i]);
     sleep(sleep_time_);
   }
 }
 
-void DracoNodelet::TurnOnJointImpedance() {
-  // TEST
+void DracoNodelet::TurnOnUpperBodyJointImpedance() {
   b_fake_estop_released_ = true;
   if (b_pnc_alive_) {
-    // lower leg only
-    // for (int i = 0; i < lower_leg_axons_.size(); ++i) {
-    // sync_->changeMode("JOINT_IMPEDANCE", lower_leg_axons_[i]);
-    // sleep(sleep_time_);
-    //}
     for (int i = 0; i < upper_body_axons_.size(); ++i) {
       sync_->changeMode("JOINT_IMPEDANCE", upper_body_axons_[i]);
       sleep(sleep_time_);
@@ -647,22 +678,37 @@ void DracoNodelet::TurnOnJointImpedance() {
     std::cout << "PnC is not alive. Construct PnC before change the mode"
               << std::endl;
   }
-  //  if (b_pnc_alive_) {
-  // for (int i = 0; i < n_joint_; ++i) {
-  // sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
-  // sleep(sleep_time_);
-  //}
-  //} else {
-  // std::cout << "PnC is not alive. Construct PnC before change the mode"
-  //<< std::endl;
-  //}
-  // TEST ENd
+}
+
+void DracoNodelet::TurnOnLowerBodyJointImpedance() {
+  b_fake_estop_released_ = true;
+  if (b_pnc_alive_) {
+    for (int i = 0; i < lower_leg_axons_.size(); ++i) {
+      sync_->changeMode("JOINT_IMPEDANCE", lower_leg_axons_[i]);
+      sleep(sleep_time_);
+    }
+  } else {
+    std::cout << "PnC is not alive. Construct PnC before change the mode"
+              << std::endl;
+  }
+}
+
+void DracoNodelet::TurnOnJointImpedance() {
+  if (b_pnc_alive_) {
+    for (int i = 0; i < n_joint_; ++i) {
+      sync_->changeMode("JOINT_IMPEDANCE", axons_[i]);
+      sleep(sleep_time_);
+    }
+  } else {
+    std::cout << "PnC is not alive. Construct PnC before change the mode"
+              << std::endl;
+  }
 }
 
 void DracoNodelet::TurnOnMotorCurrent() {
   for (int i = 0; i < n_joint_; ++i) {
     sync_->changeMode("MOTOR_CURRENT", axons_[i]);
-    sleep(sleep_time_);
+    sleep(1.0);
   }
 }
 
@@ -687,10 +733,16 @@ void DracoNodelet::LoadConfigFile() {
 
   contact_threshold_ =
       util::ReadParameter<double>(nodelet_cfg_, "contact_threshold");
+  sleep_time_ = util::ReadParameter<double>(nodelet_cfg_, "sleep_time");
 
   b_measure_computation_time_ =
       util::ReadParameter<bool>(nodelet_cfg_, "b_measure_computation_time");
-  pnc_dt_ = util::ReadParameter<double>(pnc_cfg_, "servo_dt");
+
+  b_exp_ = util::ReadParameter<bool>(pnc_cfg_, "b_exp");
+  if (!b_exp_) {
+    std::cout << "Set b_exp True in yaml" << std::endl;
+    exit(0);
+  }
 }
 
 template <class SrvType>
