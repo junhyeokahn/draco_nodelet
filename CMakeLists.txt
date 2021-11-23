@@ -5,7 +5,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 project(draco_nodelet)
 
-set(B_FIXED_CONFIGURATION FALSE)
+set(B_FIXED_CONFIGURATION False)
 
 set(CMAKE_CXX_STANDARD 17)
 include_directories("/usr/local/include")

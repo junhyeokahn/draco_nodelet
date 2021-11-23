@@ -101,6 +101,7 @@ private:
 
   Clock clock_;
   bool b_measure_computation_time_;
+  bool b_use_int_frc_command_;
   double computation_time_;
 
   Eigen::Quaternion<double> world_q_local_ned_;
