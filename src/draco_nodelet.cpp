@@ -293,6 +293,10 @@ void DracoNodelet::ProcessServiceCalls() {
     } else if (interrupt_data_ == 3) {
       // com interpolate
       pnc_interface_->interrupt->b_interrupt_button_f = true;
+    } else if (interrupt_data_ == 10) {
+      pnc_interface_->interrupt->b_interrupt_button_k = true;
+    } else if (interrupt_data_ == 0) {
+      pnc_interface_->interrupt->b_interrupt_button_j = true;
     } else {
       // do nothing
     }
