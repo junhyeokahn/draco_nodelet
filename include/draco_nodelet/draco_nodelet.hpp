@@ -80,6 +80,8 @@ private:
   std::vector<float *> ph_joint_positions_cmd_;
   std::vector<float *> ph_joint_velocities_cmd_;
   std::vector<float *> ph_joint_efforts_cmd_;
+  std::vector<float *> ph_linkage_speed_ratio_;
+  std::vector<float *> ph_motor_positions_data_;
   std::vector<float *> ph_current_cmd_;
   std::vector<float *> ph_kp_;
   std::vector<float *> ph_kd_;
@@ -87,6 +89,10 @@ private:
       *ph_imu_quaternion_y_ned_, *ph_imu_quaternion_z_ned_;
   float *ph_imu_ang_vel_x_, *ph_imu_ang_vel_y_, *ph_imu_ang_vel_z_;
   float *ph_rfoot_sg_, *ph_lfoot_sg_;
+
+  std::vector<float> actuator_speed_ratio_;
+  std::vector<float> motor_pos_polarity_;
+  Eigen::VectorXd diff_jpos_mjpos_;
 
   // PnC objects
 #if B_FIXED_CONFIGURATION

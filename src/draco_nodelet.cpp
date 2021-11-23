@@ -70,6 +70,8 @@ DracoNodelet::DracoNodelet() {
   n_sensillum_ = sensillums_.size();
 
   ph_joint_positions_data_.resize(n_joint_);
+  ph_motor_positions_data_.resize(n_joint_);
+  ph_linkage_speed_ratio_.resize(n_joint_);
   ph_kp_.resize(n_joint_);
   ph_kd_.resize(n_joint_);
   ph_joint_velocities_data_.resize(n_joint_);
@@ -79,6 +81,10 @@ DracoNodelet::DracoNodelet() {
   ph_current_cmd_.resize(n_joint_);
 
   b_pnc_alive_ = true;
+
+  actuator_speed_ratio_.resize(n_joint_);
+  motor_pos_polarity_.resize(n_joint_);
+  diff_jpos_mjpos_ = Eigen::VectorXd::Zero(n_joint_);
 #if B_FIXED_CONFIGURATION
   pnc_interface_ = new FixedDracoInterface(false);
   pnc_sensor_data_ = new FixedDracoSensorData();
@@ -116,6 +122,8 @@ DracoNodelet::~DracoNodelet() {
   spin_thread_->join();
   for (int i = 0; i < n_joint_; ++i) {
     delete ph_joint_positions_data_[i];
+    delete ph_motor_positions_data_[i];
+    delete ph_linkage_speed_ratio_[i];
     delete ph_kp_[i];
     delete ph_kd_[i];
     delete ph_joint_velocities_data_[i];
@@ -157,12 +165,14 @@ void DracoNodelet::onInit() {
 void DracoNodelet::spinThread() {
   sync_.reset(new aptk::comm::Synchronizer(true, "draco_nodelet"));
   sync_->connect();
+
   debug_interface_.reset(new aptk::util::DebugInterfacer(
       "draco", sync_->getNodeHandle(), sync_->getLogger()));
   debug_interface_->addPrimitive(&computation_time_, "pnc_computation_time");
   debug_interface_->addEigen(&world_q_imu_.coeffs(), "world_q_imu",
                              {"x", "y", "z", "w"});
   debug_interface_->addEigen(&world_av_imu_, "world_av_imu", {"x", "y", "z"});
+  debug_interface_->addEigen(&diff_jpos_mjpos_, "diff_jpos_mjpos", axons_);
 
   aptk::comm::enableRT(5, 2);
 
@@ -283,12 +293,7 @@ void DracoNodelet::ProcessServiceCalls() {
     } else if (interrupt_data_ == 3) {
       // com interpolate
       pnc_interface_->interrupt->b_interrupt_button_f = true;
-    } else if (interrupt_data_ == 0) {
-      // com interpolate
-      pnc_interface_->interrupt->b_interrupt_button_j = true;
-    }
-
-    else {
+    } else {
       // do nothing
     }
 #endif
@@ -301,6 +306,14 @@ void DracoNodelet::RegisterData() {
   int r_ankle_ie_idx(0), l_ankle_ie_idx(0), r_ankle_fe_idx(0),
       l_ankle_fe_idx(0);
   for (int i = 0; i < n_joint_; ++i) {
+    // get parameter
+    sync_->getParam<float>("Actuator__Speed_ratio", actuator_speed_ratio_[i],
+                           axons_[i]);
+    if (axons_[i] == "L_Ankle_IE") {
+      motor_pos_polarity_[i] = -1.;
+    } else {
+      motor_pos_polarity_[i] = 1.;
+    }
     // register encoder data
     ph_joint_positions_data_[i] = new float(0.);
     sync_->registerMISOPtr(ph_joint_positions_data_[i],
@@ -308,6 +321,12 @@ void DracoNodelet::RegisterData() {
     ph_joint_velocities_data_[i] = new float(0.);
     sync_->registerMISOPtr(ph_joint_velocities_data_[i],
                            "js__joint__velocity__radps", axons_[i], false);
+    ph_motor_positions_data_[i] = new float(0.);
+    sync_->registerMISOPtr(ph_motor_positions_data_[i], "motor__position__rad",
+                           axons_[i], false);
+    ph_linkage_speed_ratio_[i] = new float(0.);
+    sync_->registerMISOPtr(ph_linkage_speed_ratio_[i], "linkage__speedRatio",
+                           axons_[i], false);
 
     // register commands for joint impedance control mode
     ph_joint_positions_cmd_[i] = new float(0.);
@@ -393,6 +412,16 @@ void DracoNodelet::CopyData() {
 
   pnc_sensor_data_->imu_frame_vel = worldSVframe;
 
+  // compute joint positions from motor
+  for (int i = 0; i < n_joint_; ++i) {
+    float joint_pos = *(ph_joint_positions_data_[i]);
+    float motor_pos = *(ph_motor_positions_data_[i]);
+    float dynamic_speed_ratio = *(ph_linkage_speed_ratio_[i]);
+    float mom_arm = actuator_speed_ratio_[i] * dynamic_speed_ratio;
+    diff_jpos_mjpos_[i] =
+        motor_pos_polarity_[i] * (motor_pos / mom_arm) - joint_pos;
+  }
+
   // Set contact bool
 #if B_FIXED_CONFIGURATION
   // skip this
@@ -467,25 +496,15 @@ void DracoNodelet::CopyCommand() {
           pnc_command_->joint_positions["r_knee_fe_jd"] * 2.);
       *(ph_joint_velocities_cmd_[i]) = static_cast<float>(
           pnc_command_->joint_velocities["r_knee_fe_jd"] * 2.);
-      if (b_use_int_frc_command_) {
-        *(ph_joint_efforts_cmd_[i]) =
-            static_cast<float>(pnc_command_->r_knee_int_frc);
-      } else {
-        *(ph_joint_efforts_cmd_[i]) = static_cast<float>(
-            pnc_command_->joint_torques["r_knee_fe_jd"] / 2.);
-      }
+      *(ph_joint_efforts_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_torques["r_knee_fe_jd"] / 2.);
     } else if (joint_names_[i] == "l_knee_fe") {
       *(ph_joint_positions_cmd_[i]) = static_cast<float>(
           pnc_command_->joint_positions["l_knee_fe_jd"] * 2.);
       *(ph_joint_velocities_cmd_[i]) = static_cast<float>(
           pnc_command_->joint_velocities["l_knee_fe_jd"] * 2.);
-      if (b_use_int_frc_command_) {
-        *(ph_joint_efforts_cmd_[i]) =
-            static_cast<float>(pnc_command_->l_knee_int_frc);
-      } else {
-        *(ph_joint_efforts_cmd_[i]) = static_cast<float>(
-            pnc_command_->joint_torques["l_knee_fe_jd"] / 2.);
-      }
+      *(ph_joint_efforts_cmd_[i]) =
+          static_cast<float>(pnc_command_->joint_torques["l_knee_fe_jd"] / 2.);
     } else {
       *(ph_joint_positions_cmd_[i]) =
           static_cast<float>(pnc_command_->joint_positions[joint_names_[i]]);
@@ -607,11 +626,9 @@ bool DracoNodelet::ModeHandler(apptronik_srvs::Float32::Request &req,
     control_mode_ = control_mode::kJointImpedance;
     return true;
   } else if (data == 3) {
-    std::cout << "[[[Change to JOINT_IMPEDANCE Mode for LB]]]" << std::endl;
     b_change_lb_to_joint_impedance_mode_ = true;
     control_mode_ = control_mode::kJointImpedance;
   } else if (data == 4) {
-    std::cout << "[[[Change to JOINT_IMPEDANCE Mode for UB]]]" << std::endl;
     b_change_ub_to_joint_impedance_mode_ = true;
     control_mode_ = control_mode::kJointImpedance;
   } else {
@@ -754,8 +771,6 @@ void DracoNodelet::LoadConfigFile() {
 
   b_measure_computation_time_ =
       util::ReadParameter<bool>(nodelet_cfg_, "b_measure_computation_time");
-  b_use_int_frc_command_ =
-      util::ReadParameter<bool>(nodelet_cfg_, "b_use_int_frc_command");
 
   b_exp_ = util::ReadParameter<bool>(pnc_cfg_, "b_exp");
   if (!b_exp_) {
