@@ -297,6 +297,8 @@ void DracoNodelet::ProcessServiceCalls() {
       pnc_interface_->interrupt->b_interrupt_button_k = true;
     } else if (interrupt_data_ == 0) {
       pnc_interface_->interrupt->b_interrupt_button_j = true;
+    } else if (interrupt_data_ == 5) {
+      pnc_interface_->interrupt->b_interrupt_button_x = true;
     } else {
       // do nothing
     }
@@ -500,15 +502,25 @@ void DracoNodelet::CopyCommand() {
           pnc_command_->joint_positions["r_knee_fe_jd"] * 2.);
       *(ph_joint_velocities_cmd_[i]) = static_cast<float>(
           pnc_command_->joint_velocities["r_knee_fe_jd"] * 2.);
-      *(ph_joint_efforts_cmd_[i]) =
-          static_cast<float>(pnc_command_->joint_torques["r_knee_fe_jd"] / 2.);
+      if (b_use_int_frc_command_) {
+        *(ph_joint_efforts_cmd_[i]) =
+            static_cast<float>(pnc_command_->r_knee_int_frc);
+      } else {
+        *(ph_joint_efforts_cmd_[i]) = static_cast<float>(
+            pnc_command_->joint_torques["r_knee_fe_jd"] / 2.);
+      }
     } else if (joint_names_[i] == "l_knee_fe") {
       *(ph_joint_positions_cmd_[i]) = static_cast<float>(
           pnc_command_->joint_positions["l_knee_fe_jd"] * 2.);
       *(ph_joint_velocities_cmd_[i]) = static_cast<float>(
           pnc_command_->joint_velocities["l_knee_fe_jd"] * 2.);
-      *(ph_joint_efforts_cmd_[i]) =
-          static_cast<float>(pnc_command_->joint_torques["l_knee_fe_jd"] / 2.);
+      if (b_use_int_frc_command_) {
+        *(ph_joint_efforts_cmd_[i]) =
+            static_cast<float>(pnc_command_->l_knee_int_frc);
+      } else {
+        *(ph_joint_efforts_cmd_[i]) = static_cast<float>(
+            pnc_command_->joint_torques["l_knee_fe_jd"] / 2.);
+      }
     } else {
       *(ph_joint_positions_cmd_[i]) =
           static_cast<float>(pnc_command_->joint_positions[joint_names_[i]]);
@@ -775,6 +787,8 @@ void DracoNodelet::LoadConfigFile() {
 
   b_measure_computation_time_ =
       util::ReadParameter<bool>(nodelet_cfg_, "b_measure_computation_time");
+  b_use_int_frc_command_ =
+      util::ReadParameter<bool>(nodelet_cfg_, "b_use_int_frc_command");
 
   b_exp_ = util::ReadParameter<bool>(pnc_cfg_, "b_exp");
   if (!b_exp_) {

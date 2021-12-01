@@ -1,0 +1,3 @@
+[ ] foot nominal pose
+[ ] i gain << time constant / gain
+[ ] base jacobian << height, change cmd
