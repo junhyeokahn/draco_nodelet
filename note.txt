@@ -1,3 +1,9 @@
-[ ] foot nominal pose
-[ ] i gain << time constant / gain
-[ ] base jacobian << height, change cmd
+[ ] dcm_vel alpha
+[ ] rf weight (regularization)
+[ ] cam
+[ ] swing time increase
+[ ] task split
+
+--------------------------------------------------------------------------------
+
+[ ] estimation
