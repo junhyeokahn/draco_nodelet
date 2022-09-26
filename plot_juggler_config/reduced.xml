@@ -1,0 +1,310 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root>
+ <tabbed_widget parent="main_window" name="Main Window">
+  <plotmatrix rows="2" columns="2" tab_name="IMU">
+   <plot row="0" col="0">
+    <range bottom="0.691115" top="0.691258" left="0.002194" right="4.994211"/>
+    <limitY/>
+    <curve B="255" name="/Sensillum_v2/miso/IMU__quaternion_w__mps2/data" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range bottom="0.168057" top="0.168142" left="0.001147" right="4.993167"/>
+    <limitY/>
+    <curve B="0" name="/Sensillum_v2/miso/IMU__quaternion_y__mps2/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range bottom="-0.158007" top="-0.157865" left="0.001184" right="4.993191"/>
+    <limitY/>
+    <curve B="0" name="/Sensillum_v2/miso/IMU__quaternion_x__mps2/data" G="128" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range bottom="0.684817" top="0.684963" left="0.001187" right="4.993198"/>
+    <limitY/>
+    <curve B="255" name="/Sensillum_v2/miso/IMU__quaternion_z__mps2/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="1" columns="1" tab_name="joint_velocities">
+   <plot row="0" col="0">
+    <range bottom="-170141179657516958810350812261253120.000000" top="6975788365958214200690314781292232704.000000" left="0.000133" right="4.996185"/>
+    <limitY/>
+    <curve B="128" name="/L_Ankle_FE/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/L_Ankle_IE/miso/js__joint__velocity__radps/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/L_Elbow/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/L_Hip_AA/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/L_Hip_FE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/L_Hip_IE/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/L_Knee_FE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/L_Shoulder_AA/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/L_Shoulder_FE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/L_Shoulder_IE/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/L_Wrist_Pitch/miso/js__joint__velocity__radps/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/L_Wrist_Roll/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/Neck_Pitch/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/R_Ankle_FE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Ankle_IE/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Elbow/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/R_Hip_AA/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/R_Hip_FE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/R_Hip_IE/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/R_Knee_FE/miso/js__joint__velocity__radps/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/R_Shoulder_AA/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/R_Shoulder_FE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/R_Shoulder_IE/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Wrist_Pitch/miso/js__joint__velocity__radps/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Wrist_Roll/miso/js__joint__velocity__radps/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="1" columns="1" tab_name="joint_positions">
+   <plot row="0" col="0">
+    <range bottom="-1.583356" top="1.912764" left="0.000064" right="4.996232"/>
+    <limitY/>
+    <curve B="164" name="/L_Ankle_FE/miso/js__joint__position__rad/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/L_Ankle_IE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/L_Elbow/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="128" name="/L_Hip_AA/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="255" name="/L_Hip_FE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/L_Hip_IE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/L_Knee_FE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/L_Shoulder_AA/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/L_Shoulder_FE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/L_Shoulder_IE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/L_Wrist_Pitch/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/L_Wrist_Roll/miso/js__joint__position__rad/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/Neck_Pitch/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/R_Ankle_FE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/R_Ankle_IE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Elbow/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Hip_AA/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/R_Hip_FE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/R_Hip_IE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/R_Knee_FE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/R_Shoulder_AA/miso/js__joint__position__rad/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/R_Shoulder_FE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/R_Shoulder_IE/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/R_Wrist_Pitch/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Wrist_Roll/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="4" columns="2" tab_name="knee_joint_data">
+   <plot row="0" col="0">
+    <range bottom="0.003829" top="0.010999" left="0.000059" right="4.992266"/>
+    <limitY/>
+    <curve B="0" name="/L_Knee_FE/miso/motor__current__a/data" G="128" custom_transform="noTransform" R="128"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range bottom="-0.000843" top="0.034582" left="0.000076" right="4.996200"/>
+    <limitY/>
+    <curve B="255" name="/L_Knee_FE/miso/js__joint__effort__nm/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/mirror/L_Knee_FE/mosi/cmd__joint__effort__nm/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="2" col="0">
+    <range bottom="1.829522" top="1.829523" left="0.000010" right="4.993331"/>
+    <limitY/>
+    <curve B="0" name="/L_Knee_FE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/mirror/L_Knee_FE/mosi/cmd__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="3" col="0">
+    <range bottom="249.900000" top="250.100000" left="0.002597" right="4.994526"/>
+    <limitY/>
+    <curve B="164" name="/mirror/L_Knee_FE/mosi/gain__joint_impedance_kp__nmprad/data" G="160" custom_transform="noTransform" R="160"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range bottom="0.000064" top="0.007342" left="0.002403" right="4.994416"/>
+    <limitY/>
+    <curve B="0" name="/R_Knee_FE/miso/motor__current__a/data" G="0" custom_transform="noTransform" R="128"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range bottom="-0.000562" top="0.023055" left="0.002375" right="4.994793"/>
+    <limitY/>
+    <curve B="0" name="/R_Knee_FE/miso/js__joint__effort__nm/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="255" name="/mirror/R_Knee_FE/mosi/cmd__joint__effort__nm/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="Custom::noTransform"/>
+   </plot>
+   <plot row="2" col="1">
+    <range bottom="1.703214" top="1.903214" left="0.002372" right="4.994769"/>
+    <limitY/>
+    <curve B="128" name="/R_Knee_FE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="255" name="/mirror/R_Knee_FE/mosi/cmd__joint__position__rad/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="3" col="1">
+    <range bottom="-4.712500" top="256.212500" left="0.001219" right="4.994766"/>
+    <limitY/>
+    <curve B="0" name="/mirror/R_Knee_FE/mosi/gain__joint_impedance_kd__nmsprad/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/mirror/R_Knee_FE/mosi/gain__joint_impedance_kp__nmprad/data" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="1" columns="1" tab_name="wbc_computation_time">
+   <plot row="0" col="0">
+    <range bottom="-0.100000" top="0.100000" left="0.002832" right="4.991316"/>
+    <limitY/>
+    <curve B="128" name="/draco/misc/pnc_computation_time" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="1" columns="1" tab_name="ecat_miss_count">
+   <plot row="0" col="0">
+    <range bottom="-0.025000" top="1.025000" left="0.000000" right="4.996204"/>
+    <limitY/>
+    <curve B="0" name="/L_Ankle_FE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/L_Ankle_IE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/L_Elbow/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/L_Hip_AA/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/L_Hip_FE/miso/ecat_miss_count/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/L_Hip_IE/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/L_Knee_FE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/L_Shoulder_AA/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/L_Shoulder_FE/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/L_Shoulder_IE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/L_Wrist_Pitch/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/L_Wrist_Roll/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/Medulla/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/Medulla_V4/miso/ecat_miss_count/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/Neck_Pitch/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/R_Ankle_FE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/R_Ankle_IE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Elbow/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Hip_AA/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/R_Hip_FE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="128" name="/R_Hip_IE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/R_Knee_FE/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/R_Shoulder_AA/miso/ecat_miss_count/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/R_Shoulder_FE/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="128"/>
+    <curve B="0" name="/R_Shoulder_IE/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/R_Wrist_Pitch/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/R_Wrist_Roll/miso/ecat_miss_count/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/Sensillum_v2/miso/ecat_miss_count/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="2" columns="2" tab_name="hip_aa">
+   <plot row="0" col="0">
+    <range bottom="-0.000405" top="0.016620" left="0.002305" right="4.994761"/>
+    <limitY/>
+    <curve B="0" name="/R_Hip_AA/miso/js__joint__effort__nm/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/mirror/R_Hip_AA/mosi/cmd__joint__effort__nm/data" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range bottom="0.008531" top="0.008567" left="0.002267" right="4.994303"/>
+    <limitY/>
+    <curve B="255" name="/R_Hip_AA/miso/js__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/mirror/R_Hip_AA/mosi/cmd__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range bottom="-0.005679" top="0.005675" left="0.002533" right="4.994991"/>
+    <limitY/>
+    <curve B="0" name="/L_Hip_AA/miso/js__joint__effort__nm/data" G="0" custom_transform="noTransform" R="255"/>
+    <curve B="255" name="/mirror/L_Hip_AA/mosi/cmd__joint__effort__nm/data" G="0" custom_transform="noTransform" R="255"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range bottom="0.028134" top="0.028191" left="0.003043" right="4.994980"/>
+    <limitY/>
+    <curve B="128" name="/L_Hip_AA/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="128" name="/mirror/L_Hip_AA/mosi/cmd__joint__position__rad/data" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <plotmatrix rows="2" columns="2" tab_name="plot">
+   <plot row="0" col="0">
+    <range bottom="-0.004851" top="0.004847" left="0.002337" right="4.994391"/>
+    <limitY/>
+    <curve B="128" name="/R_Hip_FE/miso/js__joint__effort__nm/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="164" name="/mirror/R_Hip_FE/mosi/cmd__joint__effort__nm/data" G="160" custom_transform="noTransform" R="160"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="0">
+    <range bottom="-0.900934" top="-0.700934" left="0.001204" right="4.994379"/>
+    <limitY/>
+    <curve B="0" name="/R_Hip_FE/miso/js__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <curve B="0" name="/mirror/R_Hip_FE/mosi/cmd__joint__position__rad/data" G="128" custom_transform="noTransform" R="128"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="0" col="1">
+    <range bottom="-0.000346" top="0.014195" left="0.002566" right="4.996188"/>
+    <limitY/>
+    <curve B="0" name="/L_Hip_FE/miso/js__joint__effort__nm/data" G="0" custom_transform="noTransform" R="128"/>
+    <curve B="255" name="/mirror/L_Hip_FE/mosi/cmd__joint__effort__nm/data" G="0" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+   <plot row="1" col="1">
+    <range bottom="-0.908608" top="-0.708608" left="0.001328" right="4.993298"/>
+    <limitY/>
+    <curve B="164" name="/L_Hip_FE/miso/js__joint__position__rad/data" G="160" custom_transform="noTransform" R="160"/>
+    <curve B="0" name="/mirror/L_Hip_FE/mosi/cmd__joint__position__rad/data" G="128" custom_transform="noTransform" R="0"/>
+    <transform value="noTransform"/>
+   </plot>
+  </plotmatrix>
+  <currentPlotMatrix index="3"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <Plugins>
+  <DataLoad_CSV>
+   <default time_axis=""/>
+  </DataLoad_CSV>
+  <DataLoad_ROS_bags>
+   <selected_topics list=""/>
+  </DataLoad_ROS_bags>
+  <DataLoad_ULog>
+   <no_params/>
+  </DataLoad_ULog>
+  <ROS_Topic_Streamer>
+   <selected_topics list="/draco/misc;/L_Ankle_FE/miso/ecat_miss_count;/L_Ankle_FE/miso/energetics__bus_voltage__v;/L_Ankle_FE/miso/js__joint__effort__nm;/L_Ankle_FE/miso/js__joint__position__rad;/L_Ankle_FE/miso/js__joint__velocity__radps;/L_Ankle_FE/miso/motor__core_temp_est__c;/L_Ankle_FE/miso/motor__current__a;/L_Ankle_IE/miso/ecat_miss_count;/L_Ankle_IE/miso/energetics__bus_voltage__v;/L_Ankle_IE/miso/foot__sg__x;/L_Ankle_IE/miso/js__joint__effort__nm;/L_Ankle_IE/miso/js__joint__position__rad;/L_Ankle_IE/miso/js__joint__velocity__radps;/L_Ankle_IE/miso/motor__core_temp_est__c;/L_Ankle_IE/miso/motor__current__a;/L_Elbow/miso/ecat_miss_count;/L_Elbow/miso/energetics__bus_voltage__v;/L_Elbow/miso/js__joint__effort__nm;/L_Elbow/miso/js__joint__position__rad;/L_Elbow/miso/js__joint__velocity__radps;/L_Elbow/miso/motor__current__a;/L_Hip_AA/miso/ecat_miss_count;/L_Hip_AA/miso/energetics__bus_voltage__v;/L_Hip_AA/miso/js__joint__effort__nm;/L_Hip_AA/miso/js__joint__position__rad;/L_Hip_AA/miso/js__joint__velocity__radps;/L_Hip_AA/miso/motor__core_temp_est__c;/L_Hip_AA/miso/motor__current__a;/L_Hip_FE/miso/ecat_miss_count;/L_Hip_FE/miso/energetics__bus_voltage__v;/L_Hip_FE/miso/js__joint__effort__nm;/L_Hip_FE/miso/js__joint__position__rad;/L_Hip_FE/miso/js__joint__velocity__radps;/L_Hip_FE/miso/motor__core_temp_est__c;/L_Hip_FE/miso/motor__current__a;/L_Hip_IE/miso/ecat_miss_count;/L_Hip_IE/miso/energetics__bus_voltage__v;/L_Hip_IE/miso/js__joint__effort__nm;/L_Hip_IE/miso/js__joint__position__rad;/L_Hip_IE/miso/js__joint__velocity__radps;/L_Hip_IE/miso/motor__core_temp_est__c;/L_Hip_IE/miso/motor__current__a;/L_Knee_FE/miso/ecat_miss_count;/L_Knee_FE/miso/energetics__bus_voltage__v;/L_Knee_FE/miso/js__joint__effort__nm;/L_Knee_FE/miso/js__joint__position__rad;/L_Knee_FE/miso/js__joint__velocity__radps;/L_Knee_FE/miso/motor__core_temp_est__c;/L_Knee_FE/miso/motor__current__a;/L_Shoulder_AA/miso/ecat_miss_count;/L_Shoulder_AA/miso/energetics__bus_voltage__v;/L_Shoulder_AA/miso/js__joint__effort__nm;/L_Shoulder_AA/miso/js__joint__position__rad;/L_Shoulder_AA/miso/js__joint__velocity__radps;/L_Shoulder_AA/miso/motor__current__a;/L_Shoulder_FE/miso/ecat_miss_count;/L_Shoulder_FE/miso/energetics__bus_voltage__v;/L_Shoulder_FE/miso/js__joint__effort__nm;/L_Shoulder_FE/miso/js__joint__position__rad;/L_Shoulder_FE/miso/js__joint__velocity__radps;/L_Shoulder_FE/miso/motor__current__a;/L_Shoulder_IE/miso/ecat_miss_count;/L_Shoulder_IE/miso/energetics__bus_voltage__v;/L_Shoulder_IE/miso/js__joint__effort__nm;/L_Shoulder_IE/miso/js__joint__position__rad;/L_Shoulder_IE/miso/js__joint__velocity__radps;/L_Shoulder_IE/miso/motor__current__a;/L_Wrist_Pitch/miso/ecat_miss_count;/L_Wrist_Pitch/miso/energetics__bus_voltage__v;/L_Wrist_Pitch/miso/js__joint__effort__nm;/L_Wrist_Pitch/miso/js__joint__position__rad;/L_Wrist_Pitch/miso/js__joint__velocity__radps;/L_Wrist_Pitch/miso/motor__current__a;/L_Wrist_Roll/miso/ecat_miss_count;/L_Wrist_Roll/miso/energetics__bus_voltage__v;/L_Wrist_Roll/miso/js__joint__effort__nm;/L_Wrist_Roll/miso/js__joint__position__rad;/L_Wrist_Roll/miso/js__joint__velocity__radps;/L_Wrist_Roll/miso/motor__current__a;/Medulla_V4/miso/ecat_miss_count;/Medulla/miso/ecat_miss_count;/mirror/L_Ankle_FE/mosi/cmd__joint__effort__nm;/mirror/L_Ankle_FE/mosi/cmd__joint__position__rad;/mirror/L_Ankle_FE/mosi/cmd__joint__velocity__radps;/mirror/L_Ankle_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Ankle_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Ankle_IE/mosi/cmd__actuator__effort__nm;/mirror/L_Ankle_IE/mosi/cmd__actuator__position__rad;/mirror/L_Ankle_IE/mosi/cmd__actuator__velocity__radps;/mirror/L_Ankle_IE/mosi/cmd__joint__effort__nm;/mirror/L_Ankle_IE/mosi/cmd__joint__position__rad;/mirror/L_Ankle_IE/mosi/cmd__joint__velocity__radps;/mirror/L_Ankle_IE/mosi/cmd__motor__effort__a;/mirror/L_Ankle_IE/mosi/cmd__motor__position__rad;/mirror/L_Ankle_IE/mosi/cmd__motor__velocity__radps;/mirror/L_Ankle_IE/mosi/diag__rtt_counter__x;/mirror/L_Ankle_IE/mosi/ext__joint_position__rad;/mirror/L_Ankle_IE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Ankle_IE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Elbow/mosi/cmd__actuator__effort__nm;/mirror/L_Elbow/mosi/cmd__actuator__position__rad;/mirror/L_Elbow/mosi/cmd__actuator__velocity__radps;/mirror/L_Elbow/mosi/cmd__joint__effort__nm;/mirror/L_Elbow/mosi/cmd__joint__position__rad;/mirror/L_Elbow/mosi/cmd__joint__velocity__radps;/mirror/L_Elbow/mosi/cmd__motor__effort__a;/mirror/L_Elbow/mosi/cmd__motor__position__rad;/mirror/L_Elbow/mosi/cmd__motor__velocity__radps;/mirror/L_Elbow/mosi/diag__rtt_counter__x;/mirror/L_Elbow/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Elbow/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Hip_AA/mosi/cmd__actuator__effort__nm;/mirror/L_Hip_AA/mosi/cmd__actuator__position__rad;/mirror/L_Hip_AA/mosi/cmd__actuator__velocity__radps;/mirror/L_Hip_AA/mosi/cmd__joint__effort__nm;/mirror/L_Hip_AA/mosi/cmd__joint__position__rad;/mirror/L_Hip_AA/mosi/cmd__joint__velocity__radps;/mirror/L_Hip_AA/mosi/cmd__motor__effort__a;/mirror/L_Hip_AA/mosi/cmd__motor__position__rad;/mirror/L_Hip_AA/mosi/cmd__motor__velocity__radps;/mirror/L_Hip_AA/mosi/diag__rtt_counter__x;/mirror/L_Hip_AA/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Hip_AA/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Hip_FE/mosi/cmd__actuator__effort__nm;/mirror/L_Hip_FE/mosi/cmd__actuator__position__rad;/mirror/L_Hip_FE/mosi/cmd__actuator__velocity__radps;/mirror/L_Hip_FE/mosi/cmd__joint__effort__nm;/mirror/L_Hip_FE/mosi/cmd__joint__position__rad;/mirror/L_Hip_FE/mosi/cmd__joint__velocity__radps;/mirror/L_Hip_FE/mosi/cmd__motor__effort__a;/mirror/L_Hip_FE/mosi/cmd__motor__position__rad;/mirror/L_Hip_FE/mosi/cmd__motor__velocity__radps;/mirror/L_Hip_FE/mosi/diag__rtt_counter__x;/mirror/L_Hip_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Hip_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Hip_IE/mosi/cmd__actuator__effort__nm;/mirror/L_Hip_IE/mosi/cmd__actuator__position__rad;/mirror/L_Hip_IE/mosi/cmd__actuator__velocity__radps;/mirror/L_Hip_IE/mosi/cmd__joint__effort__nm;/mirror/L_Hip_IE/mosi/cmd__joint__position__rad;/mirror/L_Hip_IE/mosi/cmd__joint__velocity__radps;/mirror/L_Hip_IE/mosi/cmd__motor__effort__a;/mirror/L_Hip_IE/mosi/cmd__motor__position__rad;/mirror/L_Hip_IE/mosi/cmd__motor__velocity__radps;/mirror/L_Hip_IE/mosi/diag__rtt_counter__x;/mirror/L_Hip_IE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Hip_IE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Knee_FE/mosi/cmd__actuator__effort__nm;/mirror/L_Knee_FE/mosi/cmd__actuator__position__rad;/mirror/L_Knee_FE/mosi/cmd__actuator__velocity__radps;/mirror/L_Knee_FE/mosi/cmd__joint__effort__nm;/mirror/L_Knee_FE/mosi/cmd__joint__position__rad;/mirror/L_Knee_FE/mosi/cmd__joint__velocity__radps;/mirror/L_Knee_FE/mosi/cmd__motor__effort__a;/mirror/L_Knee_FE/mosi/cmd__motor__position__rad;/mirror/L_Knee_FE/mosi/cmd__motor__velocity__radps;/mirror/L_Knee_FE/mosi/diag__rtt_counter__x;/mirror/L_Knee_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Knee_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Shoulder_AA/mosi/cmd__actuator__effort__nm;/mirror/L_Shoulder_AA/mosi/cmd__actuator__position__rad;/mirror/L_Shoulder_AA/mosi/cmd__actuator__velocity__radps;/mirror/L_Shoulder_AA/mosi/cmd__joint__effort__nm;/mirror/L_Shoulder_AA/mosi/cmd__joint__position__rad;/mirror/L_Shoulder_AA/mosi/cmd__joint__velocity__radps;/mirror/L_Shoulder_AA/mosi/cmd__motor__effort__a;/mirror/L_Shoulder_AA/mosi/cmd__motor__position__rad;/mirror/L_Shoulder_AA/mosi/cmd__motor__velocity__radps;/mirror/L_Shoulder_AA/mosi/diag__rtt_counter__x;/mirror/L_Shoulder_AA/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Shoulder_AA/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Shoulder_FE/mosi/cmd__actuator__effort__nm;/mirror/L_Shoulder_FE/mosi/cmd__actuator__position__rad;/mirror/L_Shoulder_FE/mosi/cmd__actuator__velocity__radps;/mirror/L_Shoulder_FE/mosi/cmd__joint__effort__nm;/mirror/L_Shoulder_FE/mosi/cmd__joint__position__rad;/mirror/L_Shoulder_FE/mosi/cmd__joint__velocity__radps;/mirror/L_Shoulder_FE/mosi/cmd__motor__effort__a;/mirror/L_Shoulder_FE/mosi/cmd__motor__position__rad;/mirror/L_Shoulder_FE/mosi/cmd__motor__velocity__radps;/mirror/L_Shoulder_FE/mosi/diag__rtt_counter__x;/mirror/L_Shoulder_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Shoulder_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Shoulder_IE/mosi/cmd__actuator__effort__nm;/mirror/L_Shoulder_IE/mosi/cmd__actuator__position__rad;/mirror/L_Shoulder_IE/mosi/cmd__actuator__velocity__radps;/mirror/L_Shoulder_IE/mosi/cmd__joint__effort__nm;/mirror/L_Shoulder_IE/mosi/cmd__joint__position__rad;/mirror/L_Shoulder_IE/mosi/cmd__joint__velocity__radps;/mirror/L_Shoulder_IE/mosi/cmd__motor__effort__a;/mirror/L_Shoulder_IE/mosi/cmd__motor__position__rad;/mirror/L_Shoulder_IE/mosi/cmd__motor__velocity__radps;/mirror/L_Shoulder_IE/mosi/diag__rtt_counter__x;/mirror/L_Shoulder_IE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Shoulder_IE/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Wrist_Pitch/mosi/cmd__actuator__effort__nm;/mirror/L_Wrist_Pitch/mosi/cmd__actuator__position__rad;/mirror/L_Wrist_Pitch/mosi/cmd__actuator__velocity__radps;/mirror/L_Wrist_Pitch/mosi/cmd__joint__effort__nm;/mirror/L_Wrist_Pitch/mosi/cmd__joint__position__rad;/mirror/L_Wrist_Pitch/mosi/cmd__joint__velocity__radps;/mirror/L_Wrist_Pitch/mosi/cmd__motor__effort__a;/mirror/L_Wrist_Pitch/mosi/cmd__motor__position__rad;/mirror/L_Wrist_Pitch/mosi/cmd__motor__velocity__radps;/mirror/L_Wrist_Pitch/mosi/diag__rtt_counter__x;/mirror/L_Wrist_Pitch/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Wrist_Pitch/mosi/gain__joint_impedance_kp__nmprad;/mirror/L_Wrist_Roll/mosi/cmd__actuator__effort__nm;/mirror/L_Wrist_Roll/mosi/cmd__actuator__position__rad;/mirror/L_Wrist_Roll/mosi/cmd__actuator__velocity__radps;/mirror/L_Wrist_Roll/mosi/cmd__joint__effort__nm;/mirror/L_Wrist_Roll/mosi/cmd__joint__position__rad;/mirror/L_Wrist_Roll/mosi/cmd__joint__velocity__radps;/mirror/L_Wrist_Roll/mosi/cmd__motor__effort__a;/mirror/L_Wrist_Roll/mosi/cmd__motor__position__rad;/mirror/L_Wrist_Roll/mosi/cmd__motor__velocity__radps;/mirror/L_Wrist_Roll/mosi/diag__rtt_counter__x;/mirror/L_Wrist_Roll/mosi/gain__joint_impedance_kd__nmsprad;/mirror/L_Wrist_Roll/mosi/gain__joint_impedance_kp__nmprad;/mirror/Medulla_V4/mosi/diag__rtt_counter__x;/mirror/Medulla/mosi/diag__rtt_counter__x;/mirror/Neck_Pitch/mosi/cmd__actuator__effort__nm;/mirror/Neck_Pitch/mosi/cmd__actuator__position__rad;/mirror/Neck_Pitch/mosi/cmd__actuator__velocity__radps;/mirror/Neck_Pitch/mosi/cmd__joint__effort__nm;/mirror/Neck_Pitch/mosi/cmd__joint__position__rad;/mirror/Neck_Pitch/mosi/cmd__joint__velocity__radps;/mirror/Neck_Pitch/mosi/cmd__motor__effort__a;/mirror/Neck_Pitch/mosi/cmd__motor__position__rad;/mirror/Neck_Pitch/mosi/cmd__motor__velocity__radps;/mirror/Neck_Pitch/mosi/diag__rtt_counter__x;/mirror/Neck_Pitch/mosi/gain__joint_impedance_kd__nmsprad;/mirror/Neck_Pitch/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Ankle_FE/mosi/cmd__joint__effort__nm;/mirror/R_Ankle_FE/mosi/cmd__joint__position__rad;/mirror/R_Ankle_FE/mosi/cmd__joint__velocity__radps;/mirror/R_Ankle_FE/mosi/cmd__motor__effort__a;/mirror/R_Ankle_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Ankle_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Ankle_IE/mosi/cmd__joint__effort__nm;/mirror/R_Ankle_IE/mosi/cmd__joint__position__rad;/mirror/R_Ankle_IE/mosi/cmd__joint__velocity__radps;/mirror/R_Ankle_IE/mosi/cmd__motor__effort__a;/mirror/R_Ankle_IE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Ankle_IE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Elbow/mosi/cmd__actuator__effort__nm;/mirror/R_Elbow/mosi/cmd__actuator__position__rad;/mirror/R_Elbow/mosi/cmd__actuator__velocity__radps;/mirror/R_Elbow/mosi/cmd__joint__effort__nm;/mirror/R_Elbow/mosi/cmd__joint__position__rad;/mirror/R_Elbow/mosi/cmd__joint__velocity__radps;/mirror/R_Elbow/mosi/cmd__motor__effort__a;/mirror/R_Elbow/mosi/cmd__motor__position__rad;/mirror/R_Elbow/mosi/cmd__motor__velocity__radps;/mirror/R_Elbow/mosi/diag__rtt_counter__x;/mirror/R_Elbow/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Elbow/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Hip_AA/mosi/cmd__joint__effort__nm;/mirror/R_Hip_AA/mosi/cmd__joint__position__rad;/mirror/R_Hip_AA/mosi/cmd__joint__velocity__radps;/mirror/R_Hip_AA/mosi/cmd__motor__effort__a;/mirror/R_Hip_AA/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Hip_AA/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Hip_FE/mosi/cmd__joint__effort__nm;/mirror/R_Hip_FE/mosi/cmd__joint__position__rad;/mirror/R_Hip_FE/mosi/cmd__joint__velocity__radps;/mirror/R_Hip_FE/mosi/cmd__motor__effort__a;/mirror/R_Hip_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Hip_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Hip_IE/mosi/cmd__joint__effort__nm;/mirror/R_Hip_IE/mosi/cmd__joint__position__rad;/mirror/R_Hip_IE/mosi/cmd__joint__velocity__radps;/mirror/R_Hip_IE/mosi/cmd__motor__effort__a;/mirror/R_Hip_IE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Hip_IE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Knee_FE/mosi/cmd__joint__effort__nm;/mirror/R_Knee_FE/mosi/cmd__joint__position__rad;/mirror/R_Knee_FE/mosi/cmd__joint__velocity__radps;/mirror/R_Knee_FE/mosi/cmd__motor__effort__a;/mirror/R_Knee_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Knee_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Shoulder_AA/mosi/cmd__actuator__effort__nm;/mirror/R_Shoulder_AA/mosi/cmd__actuator__position__rad;/mirror/R_Shoulder_AA/mosi/cmd__actuator__velocity__radps;/mirror/R_Shoulder_AA/mosi/cmd__joint__effort__nm;/mirror/R_Shoulder_AA/mosi/cmd__joint__position__rad;/mirror/R_Shoulder_AA/mosi/cmd__joint__velocity__radps;/mirror/R_Shoulder_AA/mosi/cmd__motor__effort__a;/mirror/R_Shoulder_AA/mosi/cmd__motor__position__rad;/mirror/R_Shoulder_AA/mosi/cmd__motor__velocity__radps;/mirror/R_Shoulder_AA/mosi/diag__rtt_counter__x;/mirror/R_Shoulder_AA/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Shoulder_AA/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Shoulder_FE/mosi/cmd__actuator__effort__nm;/mirror/R_Shoulder_FE/mosi/cmd__actuator__position__rad;/mirror/R_Shoulder_FE/mosi/cmd__actuator__velocity__radps;/mirror/R_Shoulder_FE/mosi/cmd__joint__effort__nm;/mirror/R_Shoulder_FE/mosi/cmd__joint__position__rad;/mirror/R_Shoulder_FE/mosi/cmd__joint__velocity__radps;/mirror/R_Shoulder_FE/mosi/cmd__motor__effort__a;/mirror/R_Shoulder_FE/mosi/cmd__motor__position__rad;/mirror/R_Shoulder_FE/mosi/cmd__motor__velocity__radps;/mirror/R_Shoulder_FE/mosi/diag__rtt_counter__x;/mirror/R_Shoulder_FE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Shoulder_FE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Shoulder_IE/mosi/cmd__actuator__effort__nm;/mirror/R_Shoulder_IE/mosi/cmd__actuator__position__rad;/mirror/R_Shoulder_IE/mosi/cmd__actuator__velocity__radps;/mirror/R_Shoulder_IE/mosi/cmd__joint__effort__nm;/mirror/R_Shoulder_IE/mosi/cmd__joint__position__rad;/mirror/R_Shoulder_IE/mosi/cmd__joint__velocity__radps;/mirror/R_Shoulder_IE/mosi/cmd__motor__effort__a;/mirror/R_Shoulder_IE/mosi/cmd__motor__position__rad;/mirror/R_Shoulder_IE/mosi/cmd__motor__velocity__radps;/mirror/R_Shoulder_IE/mosi/diag__rtt_counter__x;/mirror/R_Shoulder_IE/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Shoulder_IE/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Wrist_Pitch/mosi/cmd__actuator__effort__nm;/mirror/R_Wrist_Pitch/mosi/cmd__actuator__position__rad;/mirror/R_Wrist_Pitch/mosi/cmd__actuator__velocity__radps;/mirror/R_Wrist_Pitch/mosi/cmd__joint__effort__nm;/mirror/R_Wrist_Pitch/mosi/cmd__joint__position__rad;/mirror/R_Wrist_Pitch/mosi/cmd__joint__velocity__radps;/mirror/R_Wrist_Pitch/mosi/cmd__motor__effort__a;/mirror/R_Wrist_Pitch/mosi/cmd__motor__position__rad;/mirror/R_Wrist_Pitch/mosi/cmd__motor__velocity__radps;/mirror/R_Wrist_Pitch/mosi/diag__rtt_counter__x;/mirror/R_Wrist_Pitch/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Wrist_Pitch/mosi/gain__joint_impedance_kp__nmprad;/mirror/R_Wrist_Roll/mosi/cmd__actuator__effort__nm;/mirror/R_Wrist_Roll/mosi/cmd__actuator__position__rad;/mirror/R_Wrist_Roll/mosi/cmd__actuator__velocity__radps;/mirror/R_Wrist_Roll/mosi/cmd__joint__effort__nm;/mirror/R_Wrist_Roll/mosi/cmd__joint__position__rad;/mirror/R_Wrist_Roll/mosi/cmd__joint__velocity__radps;/mirror/R_Wrist_Roll/mosi/cmd__motor__effort__a;/mirror/R_Wrist_Roll/mosi/cmd__motor__position__rad;/mirror/R_Wrist_Roll/mosi/cmd__motor__velocity__radps;/mirror/R_Wrist_Roll/mosi/diag__rtt_counter__x;/mirror/R_Wrist_Roll/mosi/gain__joint_impedance_kd__nmsprad;/mirror/R_Wrist_Roll/mosi/gain__joint_impedance_kp__nmprad;/Neck_Pitch/miso/ecat_miss_count;/Neck_Pitch/miso/energetics__bus_voltage__v;/Neck_Pitch/miso/js__joint__effort__nm;/Neck_Pitch/miso/js__joint__position__rad;/Neck_Pitch/miso/js__joint__velocity__radps;/Neck_Pitch/miso/motor__current__a;/R_Ankle_FE/miso/ecat_miss_count;/R_Ankle_FE/miso/energetics__bus_voltage__v;/R_Ankle_FE/miso/js__joint__effort__nm;/R_Ankle_FE/miso/js__joint__position__rad;/R_Ankle_FE/miso/js__joint__velocity__radps;/R_Ankle_FE/miso/motor__core_temp_est__c;/R_Ankle_FE/miso/motor__current__a;/R_Ankle_IE/miso/ecat_miss_count;/R_Ankle_IE/miso/energetics__bus_voltage__v;/R_Ankle_IE/miso/foot__sg__x;/R_Ankle_IE/miso/js__joint__effort__nm;/R_Ankle_IE/miso/js__joint__position__rad;/R_Ankle_IE/miso/js__joint__velocity__radps;/R_Ankle_IE/miso/motor__core_temp_est__c;/R_Ankle_IE/miso/motor__current__a;/R_Elbow/miso/ecat_miss_count;/R_Elbow/miso/energetics__bus_voltage__v;/R_Elbow/miso/js__joint__effort__nm;/R_Elbow/miso/js__joint__position__rad;/R_Elbow/miso/js__joint__velocity__radps;/R_Elbow/miso/motor__current__a;/R_Hip_AA/miso/ecat_miss_count;/R_Hip_AA/miso/energetics__bus_voltage__v;/R_Hip_AA/miso/js__joint__effort__nm;/R_Hip_AA/miso/js__joint__position__rad;/R_Hip_AA/miso/js__joint__velocity__radps;/R_Hip_AA/miso/motor__core_temp_est__c;/R_Hip_AA/miso/motor__current__a;/R_Hip_FE/miso/ecat_miss_count;/R_Hip_FE/miso/energetics__bus_voltage__v;/R_Hip_FE/miso/js__joint__effort__nm;/R_Hip_FE/miso/js__joint__position__rad;/R_Hip_FE/miso/js__joint__velocity__radps;/R_Hip_FE/miso/motor__core_temp_est__c;/R_Hip_FE/miso/motor__current__a;/R_Hip_IE/miso/ecat_miss_count;/R_Hip_IE/miso/energetics__bus_voltage__v;/R_Hip_IE/miso/js__joint__effort__nm;/R_Hip_IE/miso/js__joint__position__rad;/R_Hip_IE/miso/js__joint__velocity__radps;/R_Hip_IE/miso/motor__core_temp_est__c;/R_Hip_IE/miso/motor__current__a;/R_Knee_FE/miso/ecat_miss_count;/R_Knee_FE/miso/energetics__bus_voltage__v;/R_Knee_FE/miso/js__joint__effort__nm;/R_Knee_FE/miso/js__joint__position__rad;/R_Knee_FE/miso/js__joint__velocity__radps;/R_Knee_FE/miso/motor__core_temp_est__c;/R_Knee_FE/miso/motor__current__a;/R_Shoulder_AA/miso/ecat_miss_count;/R_Shoulder_AA/miso/energetics__bus_voltage__v;/R_Shoulder_AA/miso/js__joint__effort__nm;/R_Shoulder_AA/miso/js__joint__position__rad;/R_Shoulder_AA/miso/js__joint__velocity__radps;/R_Shoulder_AA/miso/motor__current__a;/R_Shoulder_FE/miso/ecat_miss_count;/R_Shoulder_FE/miso/energetics__bus_voltage__v;/R_Shoulder_FE/miso/js__joint__effort__nm;/R_Shoulder_FE/miso/js__joint__position__rad;/R_Shoulder_FE/miso/js__joint__velocity__radps;/R_Shoulder_FE/miso/motor__current__a;/R_Shoulder_IE/miso/ecat_miss_count;/R_Shoulder_IE/miso/energetics__bus_voltage__v;/R_Shoulder_IE/miso/js__joint__effort__nm;/R_Shoulder_IE/miso/js__joint__position__rad;/R_Shoulder_IE/miso/js__joint__velocity__radps;/R_Shoulder_IE/miso/motor__current__a;/R_Wrist_Pitch/miso/ecat_miss_count;/R_Wrist_Pitch/miso/energetics__bus_voltage__v;/R_Wrist_Pitch/miso/js__joint__effort__nm;/R_Wrist_Pitch/miso/js__joint__position__rad;/R_Wrist_Pitch/miso/js__joint__velocity__radps;/R_Wrist_Pitch/miso/motor__current__a;/R_Wrist_Roll/miso/ecat_miss_count;/R_Wrist_Roll/miso/energetics__bus_voltage__v;/R_Wrist_Roll/miso/js__joint__effort__nm;/R_Wrist_Roll/miso/js__joint__position__rad;/R_Wrist_Roll/miso/js__joint__velocity__radps;/R_Wrist_Roll/miso/motor__current__a;/Sensillum_v2/miso/ecat_miss_count;/Sensillum_v2/miso/IMU__comp_angularRate_x__radps;/Sensillum_v2/miso/IMU__comp_angularRate_y__radps;/Sensillum_v2/miso/IMU__comp_angularRate_z__radps;/Sensillum_v2/miso/IMU__dVel_x__rad;/Sensillum_v2/miso/IMU__dVel_y__rad;/Sensillum_v2/miso/IMU__dVel_z__rad;/Sensillum_v2/miso/IMU__quaternion_w__mps2;/Sensillum_v2/miso/IMU__quaternion_x__mps2;/Sensillum_v2/miso/IMU__quaternion_y__mps2;/Sensillum_v2/miso/IMU__quaternion_z__mps2"/>
+  </ROS_Topic_Streamer>
+  <RosoutPublisherROS/>
+  <TopicPublisherROS/>
+ </Plugins>
+ <customMathEquations/>
+ <snippets>
+  <snippet name="1st_derivative">
+   <global>var prevX = 0
+var prevY = 0</global>
+   <equation>dx = time - prevX
+dy = value - prevY
+prevX = time
+prevY = value
+
+return dy/dx</equation>
+  </snippet>
+  <snippet name="1st_order_lowpass">
+   <global>var prevY = 0
+var alpha = 0.1</global>
+   <equation>prevY = alpha * value + (1.-alpha) * prevY
+
+return prevY</equation>
+  </snippet>
+  <snippet name="sum_A_B">
+   <global></global>
+   <equation>return $$PLOT_A$$ + $$PLOT_B$$</equation>
+  </snippet>
+  <snippet name="yaw_from_quaternion">
+   <global>// source: https://en.wikipedia.org/wiki/Conversion_between_quaternions_and_Euler_angles
+
+function quaternionToYaw(x, y, z, w)
+{
+  // yaw (z-axis rotation)
+  t1 = 2.0 * (w * z + x * y);
+  t2 = 1.0 - 2.0 * (y * y + z * z);
+  yaw = Math.atan2(t1, t2);
+
+  return yaw
+}</global>
+   <equation>return quaternionToYaw(x, y, z, w);</equation>
+  </snippet>
+ </snippets>
+</root>
+
