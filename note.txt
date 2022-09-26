@@ -7,3 +7,24 @@
 --------------------------------------------------------------------------------
 
 [ ] estimation
+
+------------------------------------------------------------------------------
+
+//2022.08.02 Mon
+
+1. each joint testing
+    - joint pos calibration
+    - polarity
+    - joint impedance ctrl
+
+2. multi joints testing
+    - jpos ctrl in the air
+    - maybe osc on each leg in the air (assume fixed base)
+
+3. WBC
+    - stand up & balance
+    - com swaying in y direction
+
+4. static walking
+    - move com to one foot support polygon
+    - lifting one leg and do one-leg balancing

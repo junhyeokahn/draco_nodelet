@@ -31,6 +31,8 @@ DracoNodelet::DracoNodelet() {
             "R_Shoulder_AA", "R_Shoulder_IE", "R_Elbow",       "R_Wrist_Roll",
             "R_Wrist_Pitch"};
 
+  // lower_leg_idx_ = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+
   joint_names_ = {
       "neck_pitch",    "r_hip_ie",      "r_hip_aa",      "r_hip_fe",
       "r_knee_fe",     "r_ankle_fe",    "r_ankle_ie",    "l_hip_ie",
@@ -39,6 +41,11 @@ DracoNodelet::DracoNodelet() {
       "l_elbow_fe",    "l_wrist_ps",    "l_wrist_pitch", "r_shoulder_fe",
       "r_shoulder_aa", "r_shoulder_ie", "r_elbow_fe",    "r_wrist_ps",
       "r_wrist_pitch"};
+
+  lower_body_joint_names_ = {"r_hip_ie",  "r_hip_aa",   "r_hip_fe",
+                             "r_knee_fe", "r_ankle_fe", "r_ankle_ie",
+                             "l_hip_ie",  "l_hip_aa",   "l_hip_fe",
+                             "l_knee_fe", "l_ankle_fe", "l_ankle_ie"};
 
   // TEST: when the right leg was disconnected
   // lower_leg_axons_ = {"L_Hip_IE",  "L_Hip_AA",   "L_Hip_FE",
@@ -116,6 +123,9 @@ DracoNodelet::DracoNodelet() {
   b_fake_estop_released_ = false;
   b_interrupt_ = false;
   interrupt_data_ = 0;
+
+  lb_low_level_kp_gains_.resize(lower_leg_axons_.size());
+  lb_low_level_kd_gains_.resize(lower_leg_axons_.size());
 }
 
 DracoNodelet::~DracoNodelet() {
@@ -160,6 +170,61 @@ void DracoNodelet::onInit() {
       "/fake_estop_handler", &DracoNodelet::FakeEstopHandler, this);
   interrupt_handler_ = nh_.advertiseService(
       "/interrupt_handler", &DracoNodelet::InterruptHandler, this);
+
+  // low level gain handlers
+  right_hip_ie_kp_handler_ = nh_.advertiseService(
+      "/right_hip_ie_kp_handler", &DracoNodelet::RightHipIEKpCallback, this);
+  right_hip_aa_kp_handler_ = nh_.advertiseService(
+      "/right_hip_aa_kp_handler", &DracoNodelet::RightHipAAKpCallback, this);
+  right_hip_fe_kp_handler_ = nh_.advertiseService(
+      "/right_hip_fe_kp_handler", &DracoNodelet::RightHipFEKpCallback, this);
+  right_knee_fe_kp_handler_ = nh_.advertiseService(
+      "/right_knee_fe_kp_handler", &DracoNodelet::RightKneeFEKpCallback, this);
+  right_ankle_fe_kp_handler_ =
+      nh_.advertiseService("/right_ankle_fe_kp_handler",
+                           &DracoNodelet::RightAnkleFEKpCallback, this);
+  right_ankle_ie_kp_handler_ =
+      nh_.advertiseService("/right_ankle_ie_kp_handler",
+                           &DracoNodelet::RightAnkleIEKpCallback, this);
+  right_hip_ie_kd_handler_ = nh_.advertiseService(
+      "/right_hip_ie_kd_handler", &DracoNodelet::RightHipIEKdCallback, this);
+  right_hip_aa_kd_handler_ = nh_.advertiseService(
+      "/right_hip_aa_kd_handler", &DracoNodelet::RightHipAAKdCallback, this);
+  right_hip_fe_kd_handler_ = nh_.advertiseService(
+      "/right_hip_fe_kd_handler", &DracoNodelet::RightHipFEKdCallback, this);
+  right_knee_fe_kd_handler_ = nh_.advertiseService(
+      "/right_knee_fe_kd_handler", &DracoNodelet::RightKneeFEKdCallback, this);
+  right_ankle_fe_kd_handler_ =
+      nh_.advertiseService("/right_ankle_fe_kd_handler",
+                           &DracoNodelet::RightAnkleFEKdCallback, this);
+  right_ankle_ie_kd_handler_ =
+      nh_.advertiseService("/right_ankle_ie_kd_handler",
+                           &DracoNodelet::RightAnkleIEKdCallback, this);
+
+  left_hip_ie_kp_handler_ = nh_.advertiseService(
+      "/left_hip_ie_kp_handler", &DracoNodelet::LeftHipIEKpCallback, this);
+  left_hip_aa_kp_handler_ = nh_.advertiseService(
+      "/left_hip_aa_kp_handler", &DracoNodelet::LeftHipAAKpCallback, this);
+  left_hip_fe_kp_handler_ = nh_.advertiseService(
+      "/left_hip_fe_kp_handler", &DracoNodelet::LeftHipFEKpCallback, this);
+  left_knee_fe_kp_handler_ = nh_.advertiseService(
+      "/left_knee_fe_kp_handler", &DracoNodelet::LeftKneeFEKpCallback, this);
+  left_ankle_fe_kp_handler_ = nh_.advertiseService(
+      "/left_ankle_fe_kp_handler", &DracoNodelet::LeftAnkleFEKpCallback, this);
+  left_ankle_ie_kp_handler_ = nh_.advertiseService(
+      "/left_ankle_ie_kp_handler", &DracoNodelet::LeftAnkleIEKpCallback, this);
+  left_hip_ie_kd_handler_ = nh_.advertiseService(
+      "/left_hip_ie_kd_handler", &DracoNodelet::LeftHipIEKdCallback, this);
+  left_hip_aa_kd_handler_ = nh_.advertiseService(
+      "/left_hip_aa_kd_handler", &DracoNodelet::LeftHipAAKdCallback, this);
+  left_hip_fe_kd_handler_ = nh_.advertiseService(
+      "/left_hip_fe_kd_handler", &DracoNodelet::LeftHipFEKdCallback, this);
+  left_knee_fe_kd_handler_ = nh_.advertiseService(
+      "/left_knee_fe_kd_handler", &DracoNodelet::LeftKneeFEKdCallback, this);
+  left_ankle_fe_kd_handler_ = nh_.advertiseService(
+      "/left_ankle_fe_kd_handler", &DracoNodelet::LeftAnkleFEKdCallback, this);
+  left_ankle_ie_kd_handler_ = nh_.advertiseService(
+      "/left_ankle_ie_kd_handler", &DracoNodelet::LeftAnkleIEKdCallback, this);
 }
 
 void DracoNodelet::spinThread() {
@@ -211,6 +276,7 @@ void DracoNodelet::spinThread() {
         CopyCommand();
       }
     }
+    UpdateLowLevelGains();
 
     // indicate that we're done
     sync_->finishControl();
@@ -573,6 +639,14 @@ void DracoNodelet::SetGainsAndLimits() {
                    srv_float_current_limit);
     sleep(sleep_time_);
   }
+  for (int i = 0; i < lower_leg_axons_.size(); ++i) {
+    lb_low_level_kp_gains_[i] = util::ReadParameter<float>(
+        nodelet_cfg_["service_call"][lower_body_joint_names_[i]], "kp");
+    lb_low_level_kd_gains_[i] = util::ReadParameter<float>(
+        nodelet_cfg_["service_call"][lower_body_joint_names_[i]], "kd");
+  }
+  // lknee_kp_ = util::ReadParameter<float>(
+  // nodelet_cfg_["service_call"][joint_names_[10]], "kp");
 }
 
 void DracoNodelet::ConstructPnC() {
@@ -581,7 +655,7 @@ void DracoNodelet::ConstructPnC() {
     pnc_interface_ = new FixedDracoInterface(false);
 #else
     if (!b_exp_) {
-      std::cout << "Set b_exp true in yaml" << std::endl;
+      std::cerr << "Set b_exp true in yaml" << std::endl;
       exit(0);
     }
     pnc_interface_ = new DracoInterface();
@@ -797,6 +871,131 @@ void DracoNodelet::LoadConfigFile() {
   }
 }
 
+void DracoNodelet::UpdateLowLevelGains() {
+  for (int i = 0; i < lower_leg_axons_.size(); ++i) {
+    auto find_idx =
+        std::find(axons_.begin(), axons_.end(), lower_leg_axons_[i]);
+    int idx = find_idx - axons_.begin();
+    *(ph_kp_[idx]) = lb_low_level_kp_gains_[i];
+    *(ph_kd_[idx]) = lb_low_level_kd_gains_[i];
+  }
+}
+
+bool DracoNodelet::RightHipIEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[0] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightHipAAKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[1] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightHipFEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[2] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightKneeFEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[3] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightAnkleFEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[4] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightAnkleIEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[5] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftHipIEKpCallback(apptronik_srvs::Float32::Request &req,
+                                       apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[6] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftHipAAKpCallback(apptronik_srvs::Float32::Request &req,
+                                       apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[7] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftHipFEKpCallback(apptronik_srvs::Float32::Request &req,
+                                       apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[8] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftKneeFEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[9] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftAnkleFEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[10] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftAnkleIEKpCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kp_gains_[11] = static_cast<float>(req.set_data);
+}
+
+bool DracoNodelet::RightHipIEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[0] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightHipAAKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[1] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightHipFEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[2] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightKneeFEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[3] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightAnkleFEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[4] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::RightAnkleIEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[5] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftHipIEKdCallback(apptronik_srvs::Float32::Request &req,
+                                       apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[6] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftHipAAKdCallback(apptronik_srvs::Float32::Request &req,
+                                       apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[7] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftHipFEKdCallback(apptronik_srvs::Float32::Request &req,
+                                       apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[8] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftKneeFEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[9] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftAnkleFEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[10] = static_cast<float>(req.set_data);
+}
+bool DracoNodelet::LeftAnkleIEKdCallback(
+    apptronik_srvs::Float32::Request &req,
+    apptronik_srvs::Float32::Response &res) {
+  lb_low_level_kd_gains_[11] = static_cast<float>(req.set_data);
+}
 template <class SrvType>
 void DracoNodelet::CallSetService(const std::string &slave_name,
                                   const std::string &srv_name,

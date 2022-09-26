@@ -62,6 +62,7 @@
   <depend>roslib</depend>
   <depend>tf2_eigen</depend>
   <depend>apptronik_srvs</depend>
+  <depend>apptronik_msgs</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
    <export>

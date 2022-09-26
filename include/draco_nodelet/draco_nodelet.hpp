@@ -6,6 +6,7 @@
 #include <nodelet/nodelet.h>
 #include <ros/ros.h>
 
+#include <apptronik_msgs/Float32Stamped.h>
 #include <apptronik_srvs/Float32.h>
 #include <cortex_framework/odometry_sensors/vn100_sensor.hpp>
 #include <cortex_utils/debug_interfacer.hpp>
@@ -54,6 +55,66 @@ private:
   ros::ServiceServer fake_estop_handler_;
   ros::ServiceServer interrupt_handler_;
 
+  ros::ServiceServer right_hip_ie_kp_handler_;
+  ros::ServiceServer right_hip_aa_kp_handler_;
+  ros::ServiceServer right_hip_fe_kp_handler_;
+  ros::ServiceServer right_knee_fe_kp_handler_;
+  ros::ServiceServer right_ankle_fe_kp_handler_;
+  ros::ServiceServer right_ankle_ie_kp_handler_;
+
+  ros::ServiceServer right_hip_ie_kd_handler_;
+  ros::ServiceServer right_hip_aa_kd_handler_;
+  ros::ServiceServer right_hip_fe_kd_handler_;
+  ros::ServiceServer right_knee_fe_kd_handler_;
+  ros::ServiceServer right_ankle_fe_kd_handler_;
+  ros::ServiceServer right_ankle_ie_kd_handler_;
+
+  ros::ServiceServer left_hip_ie_kp_handler_;
+  ros::ServiceServer left_hip_aa_kp_handler_;
+  ros::ServiceServer left_hip_fe_kp_handler_;
+  ros::ServiceServer left_knee_fe_kp_handler_;
+  ros::ServiceServer left_ankle_fe_kp_handler_;
+  ros::ServiceServer left_ankle_ie_kp_handler_;
+
+  ros::ServiceServer left_hip_ie_kd_handler_;
+  ros::ServiceServer left_hip_aa_kd_handler_;
+  ros::ServiceServer left_hip_fe_kd_handler_;
+  ros::ServiceServer left_knee_fe_kd_handler_;
+  ros::ServiceServer left_ankle_fe_kd_handler_;
+  ros::ServiceServer left_ankle_ie_kd_handler_;
+
+  std::vector<float> lb_low_level_kp_gains_;
+  std::vector<float> lb_low_level_kd_gains_;
+  // float rhip_ie_kp_;
+  // float rhip_aa_kp_;
+  // float rhip_fe_kp_;
+  // float rknee_fe_kp_;
+  // float rankle_fe_kp_;
+  // float rankle_ie_kp_;
+
+  // float rhip_ie_kd_;
+  // float rhip_aa_kd_;
+  // float rhip_fe_kd_;
+  // float rknee_fe_kd_;
+  // float rankle_fe_kd_;
+  // float rankle_ie_kd_;
+
+  // float lhip_ie_kp_;
+  // float lhip_aa_kp_;
+  // float lhip_fe_kp_;
+  // float lknee_fe_kp_;
+  // float lankle_fe_kp_;
+  // float lankle_ie_kp_;
+
+  // float lhip_ie_kd_;
+  // float lhip_aa_kd_;
+  // float lhip_fe_kd_;
+  // float lknee_fe_kd_;
+  // float lankle_fe_kd_;
+  // float lankle_ie_kd_;
+
+  void UpdateLowLevelGains();
+
   // timing
   int count_;
   double sleep_time_;
@@ -67,11 +128,13 @@ private:
   std::vector<std::string> axons_;
   std::vector<std::string> lower_leg_axons_;
   std::vector<std::string> upper_body_axons_;
+  std::vector<int> lower_leg_idx_;
   std::vector<std::string> medullas_;
   std::vector<std::string> sensillums_;
 
   // actuating joint name corresponding to the axons
   std::vector<std::string> joint_names_;
+  std::vector<std::string> lower_body_joint_names_;
 
   // placeholders for data coming through ecat communication
   // this placeholders shares the same order with axons_
@@ -142,6 +205,59 @@ private:
 
   // copy placeholder data to sensor_data
   void CopyData();
+
+  // update low level gains
+  bool RightHipIEKpCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool RightHipAAKpCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool RightHipFEKpCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool RightKneeFEKpCallback(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
+  bool RightAnkleFEKpCallback(apptronik_srvs::Float32::Request &req,
+                              apptronik_srvs::Float32::Response &res);
+  bool RightAnkleIEKpCallback(apptronik_srvs::Float32::Request &req,
+                              apptronik_srvs::Float32::Response &res);
+
+  bool RightHipIEKdCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool RightHipAAKdCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool RightHipFEKdCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool RightKneeFEKdCallback(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
+  bool RightAnkleFEKdCallback(apptronik_srvs::Float32::Request &req,
+                              apptronik_srvs::Float32::Response &res);
+  bool RightAnkleIEKdCallback(apptronik_srvs::Float32::Request &req,
+                              apptronik_srvs::Float32::Response &res);
+
+  bool LeftHipIEKpCallback(apptronik_srvs::Float32::Request &req,
+                           apptronik_srvs::Float32::Response &res);
+  bool LeftHipAAKpCallback(apptronik_srvs::Float32::Request &req,
+                           apptronik_srvs::Float32::Response &res);
+  bool LeftHipFEKpCallback(apptronik_srvs::Float32::Request &req,
+                           apptronik_srvs::Float32::Response &res);
+  bool LeftKneeFEKpCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool LeftAnkleFEKpCallback(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
+  bool LeftAnkleIEKpCallback(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
+
+  bool LeftHipIEKdCallback(apptronik_srvs::Float32::Request &req,
+                           apptronik_srvs::Float32::Response &res);
+  bool LeftHipAAKdCallback(apptronik_srvs::Float32::Request &req,
+                           apptronik_srvs::Float32::Response &res);
+  bool LeftHipFEKdCallback(apptronik_srvs::Float32::Request &req,
+                           apptronik_srvs::Float32::Response &res);
+  bool LeftKneeFEKdCallback(apptronik_srvs::Float32::Request &req,
+                            apptronik_srvs::Float32::Response &res);
+  bool LeftAnkleFEKdCallback(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
+  bool LeftAnkleIEKdCallback(apptronik_srvs::Float32::Request &req,
+                             apptronik_srvs::Float32::Response &res);
 
   // copy command to placeholder
   void CopyCommand();
